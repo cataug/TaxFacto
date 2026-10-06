@@ -1,0 +1,87 @@
+{
+  "ArgumentPetitioner": {
+    "precision": 0.3493975903614458,
+    "recall": 0.5471698113207547,
+    "f1-score": 0.4264705882352941,
+    "support": 53.0
+  },
+  "ArgumentRespondent": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 54.0
+  },
+  "Fact": {
+    "precision": 0.7066666666666667,
+    "recall": 0.8091603053435115,
+    "f1-score": 0.7544483985765125,
+    "support": 131.0
+  },
+  "Issue": {
+    "precision": 0.7777777777777778,
+    "recall": 0.6363636363636364,
+    "f1-score": 0.7,
+    "support": 11.0
+  },
+  "None": {
+    "precision": 0.375,
+    "recall": 0.3333333333333333,
+    "f1-score": 0.35294117647058826,
+    "support": 18.0
+  },
+  "PrecedentNotReliedUpon": {
+    "precision": 0.047619047619047616,
+    "recall": 0.125,
+    "f1-score": 0.06896551724137931,
+    "support": 8.0
+  },
+  "PrecedentOverruled": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "PrecedentReliedUpon": {
+    "precision": 0.7319587628865979,
+    "recall": 0.5298507462686567,
+    "f1-score": 0.6147186147186147,
+    "support": 134.0
+  },
+  "RatioOfTheDecision": {
+    "precision": 0.48559670781893005,
+    "recall": 0.7023809523809523,
+    "f1-score": 0.5742092457420924,
+    "support": 168.0
+  },
+  "RulingByLowerCourt": {
+    "precision": 0.8717948717948718,
+    "recall": 0.3541666666666667,
+    "f1-score": 0.5037037037037037,
+    "support": 96.0
+  },
+  "RulingByPresentCourt": {
+    "precision": 0.5625,
+    "recall": 0.8571428571428571,
+    "f1-score": 0.6792452830188679,
+    "support": 21.0
+  },
+  "Statute": {
+    "precision": 0.7524752475247525,
+    "recall": 0.7835051546391752,
+    "f1-score": 0.7676767676767676,
+    "support": 97.0
+  },
+  "accuracy": 0.5891276864728192,
+  "macro avg": {
+    "precision": 0.4717322227041741,
+    "recall": 0.47317278862162865,
+    "f1-score": 0.4535316079486517,
+    "support": 791.0
+  },
+  "weighted avg": {
+    "precision": 0.6004241989906333,
+    "recall": 0.5891276864728192,
+    "f1-score": 0.5713832456699867,
+    "support": 791.0
+  }
+}

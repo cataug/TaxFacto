@@ -1,0 +1,13 @@
+dataset,split,rows,documents,labels
+legalseg,dev,126308,693,7
+legalseg,test,146813,712,7
+legalseg,train,1057220,5709,7
+legaleval,dev,2840,30,13
+legaleval,test,3995,50,13
+legaleval,train,26923,243,13
+marro_india,dev,3024,14,7
+marro_india,test,2548,20,7
+marro_india,train,27406,136,7
+marro_uk,dev,1964,6,7
+marro_uk,test,2171,9,7
+marro_uk,train,15762,44,7

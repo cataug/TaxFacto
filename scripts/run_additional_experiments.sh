@@ -1,0 +1,522 @@
+#!/usr/bin/env bash
+
+cd ~/TaxFacto || exit 1
+
+PY=/home/tahiti/Malashin_Projects/.venv_a100/bin/python
+
+TRANSFER_TASKS="data/tasks/transfer"
+NATIVE_TASKS="data/tasks/native_eval"
+
+TRANSFER_RESULTS="results/additional/transfer"
+NATIVE_RESULTS="results/additional/native"
+
+LOG_ROOT="logs/additional"
+FAIL_ROOT="${LOG_ROOT}/failed"
+
+mkdir -p "$TRANSFER_RESULTS"
+mkdir -p "$NATIVE_RESULTS"
+mkdir -p "$LOG_ROOT"
+mkdir -p "$FAIL_ROOT"
+
+export TOKENIZERS_PARALLELISM=false
+export PYTHONUNBUFFERED=1
+
+JOBS="${ADDITIONAL_JOBS:-3}"
+
+DATASETS=(
+    legaleval
+    marro_india
+    marro_uk
+    iltur_cl
+    iltur_it
+)
+
+SEEDS=(
+    42
+    43
+    44
+)
+
+CORE_METHODS=(
+    full_ft
+    shared_lora
+    category_lora
+    role_adapter
+)
+
+PAIR_METHODS=(
+    shared_lora
+    role_adapter
+)
+
+NATIVE_METHODS=(
+    full_ft
+    shared_lora
+    role_adapter
+)
+
+NATIVE_DATASETS=(
+    legaleval
+    iltur_cl
+    iltur_it
+)
+
+TOTAL_TRANSFER=168
+TOTAL_NATIVE=27
+TOTAL=195
+
+
+# ============================================================
+# Recover exact learning rates from the completed main grid.
+# ============================================================
+
+declare -A LR
+
+while IFS=$'\t' read -r METHOD VALUE; do
+    LR["$METHOD"]="$VALUE"
+done < <(
+    "$PY" - <<'PY'
+from pathlib import Path
+import json
+
+root = Path.home() / "TaxFacto"
+
+methods = [
+    "full_ft",
+    "shared_lora",
+    "category_lora",
+    "role_adapter",
+]
+
+for method in methods:
+
+    fn = (
+        root
+        / "results/final_common7"
+        / (
+            "main__inlegalbert"
+            "__r8a16"
+            "__legaleval"
+            f"__{method}"
+            "__seed42"
+        )
+        / "run_summary.json"
+    )
+
+    with open(fn) as f:
+        x = json.load(f)
+
+    print(
+        method,
+        x.get(
+            "learning_rate",
+            0.0002,
+        ),
+        sep="\t",
+    )
+PY
+)
+
+
+echo "Recovered learning rates:"
+
+for M in "${CORE_METHODS[@]}"; do
+    echo "  $M = ${LR[$M]}"
+done
+
+
+is_old_domain() {
+    case "$1" in
+        legaleval|marro_india|marro_uk)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+
+is_core_direction() {
+
+    SRC="$1"
+    TGT="$2"
+
+    # IL-TUR controlled transfer.
+    if \
+        [ "$SRC" = "iltur_cl" ] \
+        && [ "$TGT" = "iltur_it" ]
+    then
+        return 0
+    fi
+
+    if \
+        [ "$SRC" = "iltur_it" ] \
+        && [ "$TGT" = "iltur_cl" ]
+    then
+        return 0
+    fi
+
+    # LegalEval/MARRO triangle.
+    if \
+        is_old_domain "$SRC" \
+        && is_old_domain "$TGT"
+    then
+        return 0
+    fi
+
+    return 1
+}
+
+
+cleanup_run() {
+
+    RUN_DIR="$1"
+
+    if [ ! -d "$RUN_DIR" ]; then
+        return 0
+    fi
+
+    find "$RUN_DIR" \
+        -type d \
+        -name 'checkpoint-*' \
+        -prune \
+        -exec rm -rf {} + \
+        2>/dev/null
+
+    rm -rf \
+        "$RUN_DIR/checkpoints" \
+        "$RUN_DIR/best_model" \
+        2>/dev/null
+}
+
+
+run_one() {
+
+    TYPE="$1"
+    TAG="$2"
+    TASK_FILE="$3"
+    METHOD="$4"
+    SEED="$5"
+
+    if [ "$TYPE" = "transfer" ]; then
+        RESULT_ROOT="$TRANSFER_RESULTS"
+    else
+        RESULT_ROOT="$NATIVE_RESULTS"
+    fi
+
+    RUN="${TAG}__legaleval__${METHOD}__seed${SEED}"
+
+    RUN_DIR="${RESULT_ROOT}/${RUN}"
+
+    SUMMARY="${RUN_DIR}/run_summary.json"
+
+    LOG="${LOG_ROOT}/${RUN}.log"
+
+    FAIL="${FAIL_ROOT}/${RUN}.failed"
+
+    if [ -s "$SUMMARY" ]; then
+        echo "[SKIP] $RUN"
+        rm -f "$FAIL"
+        return 0
+    fi
+
+    rm -rf "$RUN_DIR"
+    rm -f "$FAIL"
+
+    echo
+    echo "================================================================"
+    echo "[START] $RUN"
+    echo "task   = $TASK_FILE"
+    echo "method = $METHOD"
+    echo "seed   = $SEED"
+    echo "lr     = ${LR[$METHOD]}"
+    echo "================================================================"
+
+    TAXFACTO_TASK_FILE="$TASK_FILE" \
+    "$PY" -u src/run_train_with_task.py \
+        --dataset legaleval \
+        --method "$METHOD" \
+        --model /home/tahiti/TaxFacto/models/InLegalBERT \
+        --seed "$SEED" \
+        --epochs 4 \
+        --max_length 256 \
+        --batch_size 32 \
+        --eval_batch_size 64 \
+        --rank 8 \
+        --alpha 16 \
+        --dropout 0.05 \
+        --run_tag "$TAG" \
+        --result_root "$RESULT_ROOT" \
+        2>&1 \
+        | sed -u "s/^/[${TAG}|${METHOD}|s${SEED}] /" \
+        | tee "$LOG"
+
+    STATUS=${PIPESTATUS[0]}
+
+    if [ "$STATUS" -ne 0 ]; then
+
+        echo "$STATUS" > "$FAIL"
+
+        echo
+        echo "[FAILED] $RUN"
+        echo "log: $LOG"
+
+        return "$STATUS"
+    fi
+
+    if [ ! -s "$SUMMARY" ]; then
+
+        echo "missing summary" > "$FAIL"
+
+        echo
+        echo "[FAILED] $RUN"
+        echo "run_summary.json missing"
+
+        return 98
+    fi
+
+    cleanup_run "$RUN_DIR"
+
+    rm -f "$FAIL"
+
+    echo "[DONE] $RUN"
+
+    return 0
+}
+
+
+ACTIVE=0
+GROUP_FAILED=0
+
+
+wait_one() {
+
+    wait -n
+
+    STATUS=$?
+
+    ACTIVE=$((ACTIVE - 1))
+
+    if [ "$STATUS" -ne 0 ]; then
+        GROUP_FAILED=1
+    fi
+}
+
+
+launch() {
+
+    run_one "$@" &
+
+    ACTIVE=$((ACTIVE + 1))
+
+    if [ "$ACTIVE" -ge "$JOBS" ]; then
+        wait_one
+    fi
+}
+
+
+drain() {
+
+    while [ "$ACTIVE" -gt 0 ]; do
+        wait_one
+    done
+
+    if [ "$GROUP_FAILED" -ne 0 ]; then
+
+        echo
+        echo "============================================================"
+        echo "ONE OR MORE RUNS FAILED"
+        echo "============================================================"
+
+        find "$FAIL_ROOT" \
+            -type f \
+            -printf '%f\n' \
+            | sort
+
+        echo
+        echo "Fix and rerun the same command."
+        echo "Completed summaries will be skipped."
+
+        exit 1
+    fi
+}
+
+
+interrupt() {
+
+    echo
+    echo "INTERRUPTED."
+
+    PIDS=$(jobs -pr)
+
+    if [ -n "$PIDS" ]; then
+        kill $PIDS 2>/dev/null
+        wait 2>/dev/null
+    fi
+
+    exit 130
+}
+
+trap interrupt INT TERM
+
+
+echo
+echo "================================================================"
+echo "ADDITIONAL TAXFACTO EXPERIMENTS"
+echo "================================================================"
+echo "transfer runs : $TOTAL_TRANSFER"
+echo "native runs   : $TOTAL_NATIVE"
+echo "total         : $TOTAL"
+echo "parallel jobs : $JOBS"
+echo "================================================================"
+
+
+# ============================================================
+# PHASE T — 168 TRANSFER RUNS
+#
+# Core 8 directions:
+#   2 IL-TUR directions
+#   6 LegalEval/MARRO directions
+#
+# -> 4 methods × 3 seeds = 96
+#
+# Remaining 12 directions:
+# -> Shared LoRA + Role Adapter × 3 seeds = 72
+# ============================================================
+
+echo
+echo "################ TRANSFER PHASE ################"
+
+for SRC in "${DATASETS[@]}"; do
+
+    for TGT in "${DATASETS[@]}"; do
+
+        if [ "$SRC" = "$TGT" ]; then
+            continue
+        fi
+
+        TASK_FILE="${TRANSFER_TASKS}/xfer__${SRC}__to__${TGT}.parquet"
+
+        if [ ! -f "$TASK_FILE" ]; then
+            echo "Missing: $TASK_FILE"
+            exit 2
+        fi
+
+        TAG="xfer-${SRC}-to-${TGT}"
+
+        if is_core_direction "$SRC" "$TGT"; then
+            METHODS=(
+                "${CORE_METHODS[@]}"
+            )
+        else
+            METHODS=(
+                "${PAIR_METHODS[@]}"
+            )
+        fi
+
+        for METHOD in "${METHODS[@]}"; do
+
+            for SEED in "${SEEDS[@]}"; do
+
+                launch \
+                    transfer \
+                    "$TAG" \
+                    "$TASK_FILE" \
+                    "$METHOD" \
+                    "$SEED"
+
+            done
+        done
+    done
+done
+
+drain
+
+
+# ============================================================
+# PHASE N — 27 NATIVE-TAXONOMY RUNS
+# ============================================================
+
+ACTIVE=0
+GROUP_FAILED=0
+
+echo
+echo "################ NATIVE PHASE ################"
+
+for DATASET in "${NATIVE_DATASETS[@]}"; do
+
+    TASK_FILE="${NATIVE_TASKS}/native__${DATASET}.parquet"
+
+    if [ ! -f "$TASK_FILE" ]; then
+        echo "Missing: $TASK_FILE"
+        exit 3
+    fi
+
+    TAG="native-${DATASET}"
+
+    for METHOD in "${NATIVE_METHODS[@]}"; do
+
+        for SEED in "${SEEDS[@]}"; do
+
+            launch \
+                native \
+                "$TAG" \
+                "$TASK_FILE" \
+                "$METHOD" \
+                "$SEED"
+
+        done
+    done
+done
+
+drain
+
+
+TRANSFER_FOUND=$(
+    find "$TRANSFER_RESULTS" \
+        -mindepth 2 \
+        -maxdepth 2 \
+        -name run_summary.json \
+        -type f \
+        | wc -l
+)
+
+NATIVE_FOUND=$(
+    find "$NATIVE_RESULTS" \
+        -mindepth 2 \
+        -maxdepth 2 \
+        -name run_summary.json \
+        -type f \
+        | wc -l
+)
+
+FAIL_FOUND=$(
+    find "$FAIL_ROOT" \
+        -type f \
+        | wc -l
+)
+
+echo
+echo "================================================================"
+echo "ADDITIONAL RUN FINISHED"
+echo "================================================================"
+echo "transfer summaries : $TRANSFER_FOUND / $TOTAL_TRANSFER"
+echo "native summaries   : $NATIVE_FOUND / $TOTAL_NATIVE"
+echo "failure markers    : $FAIL_FOUND"
+echo "================================================================"
+
+if [ "$TRANSFER_FOUND" -ne "$TOTAL_TRANSFER" ]; then
+    exit 4
+fi
+
+if [ "$NATIVE_FOUND" -ne "$TOTAL_NATIVE" ]; then
+    exit 5
+fi
+
+if [ "$FAIL_FOUND" -ne 0 ]; then
+    exit 6
+fi
+
+echo
+echo "ALL 195 ADDITIONAL TRAINING RUNS COMPLETE."

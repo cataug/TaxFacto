@@ -1,0 +1,3587 @@
+from pathlib import Path
+import shutil
+import math
+
+import numpy as np
+import pandas as pd
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+from matplotlib.colors import LinearSegmentedColormap, Normalize
+from matplotlib.patches import FancyBboxPatch, Rectangle, Polygon
+from matplotlib.lines import Line2D
+from matplotlib.markers import MarkerStyle
+
+from scipy.stats import spearmanr
+from scipy.cluster.hierarchy import linkage, dendrogram
+from scipy.spatial.distance import squareform
+
+
+# =====================================================================
+# PATHS — ONE FIGURE DIRECTORY ONLY
+# =====================================================================
+
+ROOT = Path.home() / "TaxFacto"
+
+MAIN = ROOT / "results/final_analysis"
+ADD = ROOT / "results/additional/analysis"
+BOOT = ROOT / "results/additional/bootstrap"
+CORE8 = ROOT / "results/additional/fair_core8"
+
+OLD_V3 = ROOT / "results/paper_figures_v3"
+OLD_V4 = ROOT / "results/paper_figures_v4"
+
+OUT = ROOT / "results/paper_figures"
+OUT.mkdir(parents=True, exist_ok=True)
+
+
+# Keep the canonical directory persistent.
+# Individual regenerated figures overwrite their own files.
+# Only the gallery is rebuilt on each run.
+gallery = OUT / "00_gallery.png"
+if gallery.exists():
+    gallery.unlink()
+
+
+# =====================================================================
+# STYLE
+# =====================================================================
+
+mpl.rcParams.update({
+    "font.family": "DejaVu Sans",
+
+    "font.size": 18,
+    "axes.titlesize": 24,
+    "axes.labelsize": 20,
+
+    "xtick.labelsize": 15,
+    "ytick.labelsize": 15,
+
+    "legend.fontsize": 14,
+
+    "axes.linewidth": 1.0,
+
+    "figure.facecolor": "white",
+    "savefig.facecolor": "white",
+
+    "pdf.fonttype": 42,
+    "ps.fonttype": 42,
+
+    "savefig.dpi": 280,
+})
+
+
+# =====================================================================
+# LABELS
+# =====================================================================
+
+METHODS6 = [
+    "full_ft",
+    "role_adapter",
+    "category_lora",
+    "shared_lora_widehead",
+    "shared_lora",
+    "frozen",
+]
+
+METHODS4 = [
+    "full_ft",
+    "role_adapter",
+    "category_lora",
+    "shared_lora",
+]
+
+METHOD_LABEL = {
+    "full_ft": "Full FT",
+    "role_adapter": "Role Adapter",
+    "category_lora": "Category LoRA",
+    "shared_lora_widehead": "Wide-head",
+    "shared_lora": "Shared LoRA",
+    "frozen": "Frozen",
+    "true_category_lora": "True category LoRA",
+}
+
+METHOD_SHORT = {
+    "full_ft": "FT",
+    "role_adapter": "RA",
+    "category_lora": "CL",
+    "shared_lora_widehead": "WH",
+    "shared_lora": "SL",
+    "frozen": "FR",
+}
+
+DATASETS = [
+    "legaleval",
+    "marro_india",
+    "marro_uk",
+    "iltur_cl",
+    "iltur_it",
+]
+
+DATASET_LABEL = {
+    "legaleval": "LegalEval",
+    "marro_india": "MARRO-IN",
+    "marro_uk": "MARRO-UK",
+    "iltur_cl": "IL-TUR CL",
+    "iltur_it": "IL-TUR IT",
+}
+
+DATASET_SHORT = {
+    "legaleval": "LE",
+    "marro_india": "IN",
+    "marro_uk": "UK",
+    "iltur_cl": "CL",
+    "iltur_it": "IT",
+}
+
+BACKBONES = [
+    "inlegalbert",
+    "legalbert",
+    "deberta",
+]
+
+BACKBONE_LABEL = {
+    "inlegalbert": "InLegalBERT",
+    "legalbert": "LegalBERT",
+    "deberta": "DeBERTa-v3",
+}
+
+
+# =====================================================================
+# COLORS
+# =====================================================================
+
+vir = plt.cm.viridis
+civ = plt.cm.cividis
+
+METHOD_COLOR = {
+    "full_ft": vir(0.94),
+    "role_adapter": vir(0.64),
+    "category_lora": vir(0.46),
+    "shared_lora_widehead": civ(0.38),
+    "shared_lora": vir(0.18),
+    "frozen": (0.72, 0.74, 0.78, 1.0),
+    "true_category_lora": civ(0.78),
+}
+
+BACKBONE_COLOR = {
+    "inlegalbert": vir(0.20),
+    "legalbert": vir(0.55),
+    "deberta": vir(0.86),
+}
+
+DATASET_COLOR = {
+    ds: vir(x)
+    for ds, x in zip(
+        DATASETS,
+        np.linspace(0.10, 0.90, 5),
+    )
+}
+
+
+CMAP_DELTA = LinearSegmentedColormap.from_list(
+    "delta",
+    [
+        "#482878",
+        "#365C8D",
+        "#F5F3EE",
+        "#2AAF7F",
+        "#FDE725",
+    ],
+)
+
+
+# =====================================================================
+# HELPERS
+# =====================================================================
+
+def mn(x):
+    return METHOD_LABEL.get(x, x)
+
+
+def dn(x):
+    return DATASET_LABEL.get(x, x)
+
+
+def style(ax, grid="y"):
+    ax.set_facecolor("#FBFAF7")
+
+    for s in ax.spines.values():
+        s.set_color("black")
+        s.set_linewidth(0.9)
+
+    if grid:
+        ax.grid(
+            True,
+            axis=grid,
+            color="black",
+            alpha=0.11,
+            linewidth=0.7,
+            zorder=-10,
+        )
+
+    ax.set_axisbelow(True)
+
+
+def subtle_gradient(
+    ax,
+    top="#F0F8FD",
+    bottom="#FFF9F1",
+    alpha=0.60,
+):
+    # preserve limits: avoids the old stupid 0..1 autoscale
+    oldx = ax.get_xlim()
+    oldy = ax.get_ylim()
+
+    a = np.linspace(0, 1, 256).reshape(-1, 1)
+
+    cmap = LinearSegmentedColormap.from_list(
+        "bg",
+        [top, bottom],
+    )
+
+    ax.imshow(
+        a,
+        extent=(0, 1, 0, 1),
+        transform=ax.transAxes,
+        origin="lower",
+        aspect="auto",
+        cmap=cmap,
+        alpha=alpha,
+        zorder=-100,
+    )
+
+    ax.set_xlim(oldx)
+    ax.set_ylim(oldy)
+
+
+def box(
+    ax,
+    x,
+    y,
+    text,
+    fs=10,
+    ha="center",
+    va="center",
+):
+    ax.text(
+        x,
+        y,
+        text,
+        ha=ha,
+        va=va,
+        fontsize=fs,
+        color="black",
+        bbox=dict(
+            boxstyle="round,pad=0.20",
+            facecolor="#FFFDF8",
+            edgecolor="black",
+            linewidth=0.65,
+            alpha=0.94,
+        ),
+        zorder=50,
+    )
+
+
+def save(fig, name):
+    fig.savefig(
+        OUT / f"{name}.png",
+        bbox_inches="tight",
+    )
+
+    fig.savefig(
+        OUT / f"{name}.pdf",
+        bbox_inches="tight",
+    )
+
+    plt.close(fig)
+
+
+def bootstrap_mean(x, B=10000, seed=42):
+    x = np.asarray(x, dtype=float)
+    x = x[np.isfinite(x)]
+
+    rng = np.random.default_rng(seed)
+
+    s = rng.choice(
+        x,
+        size=(B, len(x)),
+        replace=True,
+    )
+
+    m = s.mean(axis=1)
+
+    return (
+        float(x.mean()),
+        float(np.quantile(m, 0.025)),
+        float(np.quantile(m, 0.975)),
+    )
+
+
+# =====================================================================
+# LOAD DATA
+# =====================================================================
+
+main_cells = pd.read_csv(
+    MAIN / "main_cell_mean_std.csv"
+)
+
+main_overall = pd.read_csv(
+    MAIN / "main_method_overall.csv"
+)
+
+main_eff = pd.read_csv(
+    MAIN / "main_efficiency.csv"
+)
+
+mech = pd.read_csv(
+    MAIN / "mechanistic_comparison.csv"
+)
+
+transfer = pd.read_csv(
+    ADD / "transfer_summary.csv"
+)
+
+transfer_rs = pd.read_csv(
+    ADD / "transfer_role_vs_shared.csv"
+)
+
+native = pd.read_csv(
+    ADD / "native_summary.csv"
+)
+
+boot = pd.read_csv(
+    BOOT / "hierarchical_bootstrap_global.csv"
+)
+
+core8 = pd.read_csv(
+    CORE8 / "transfer_core8_pivot.csv"
+).set_index(
+    ["source", "target"]
+)
+
+
+# =====================================================================
+# COMMON MATRICES
+# =====================================================================
+
+within6 = (
+    main_cells
+    .pivot_table(
+        index=[
+            "model_key",
+            "dataset_key",
+        ],
+        columns="method_key",
+        values="macro_f1_mean",
+    )
+)
+
+within4 = (
+    within6[
+        METHODS4
+    ]
+    .dropna()
+)
+
+native_p = (
+    native
+    .pivot_table(
+        index="dataset",
+        columns="method",
+        values="macro_f1_mean",
+    )
+)
+
+
+# =====================================================================
+# COPY THE FIGURES THAT ALREADY WORK
+#
+# Search several historical names only once. If the canonical copy
+# already exists, leave it untouched. This lets the old v3/v4 folders
+# be deleted after the canonical package is complete.
+# =====================================================================
+
+OLD_EDITORIAL = ROOT / "results/editorial_figures"
+
+copy_candidates = {
+    "02_pairwise_dominance": [
+        (OLD_V4, "02_pairwise_dominance"),
+        (OLD_V3, "02_pairwise_dominance"),
+        (OLD_V3, "fig02_dominance_triptych"),
+        (OLD_EDITORIAL, "fig02_dominance_triptych"),
+    ],
+
+    "03_transfer_atlas": [
+        (OLD_V4, "03_transfer_atlas"),
+        (OLD_V3, "03_transfer_atlas"),
+        (OLD_V3, "fig03_transfer_atlas"),
+        (OLD_EDITORIAL, "fig03_transfer_atlas"),
+    ],
+
+    "05_within_domain_distributions": [
+        (OLD_V3, "05_within_domain_distributions"),
+    ],
+
+    "07_rank_sensitivity": [
+        (OLD_V3, "07_rank_sensitivity"),
+    ],
+
+    "10_source_transfer_robustness": [
+        (OLD_V3, "10_source_transfer_robustness"),
+    ],
+
+    "13_fullft_headroom_recovery": [
+        (OLD_V4, "13_fullft_headroom_recovery"),
+    ],
+
+    "14_directed_transfer_network": [
+        (OLD_V4, "14_directed_transfer_network"),
+    ],
+
+    "15_gain_ridgelines": [
+        (OLD_V4, "15_gain_ridgelines"),
+    ],
+}
+
+
+for canonical_stem, candidates in copy_candidates.items():
+
+    for ext in ["png", "pdf"]:
+
+        dst = OUT / f"{canonical_stem}.{ext}"
+
+        # Canonical copy already exists -> keep it.
+        if dst.exists():
+            continue
+
+        found = False
+
+        for srcdir, srcstem in candidates:
+
+            src = srcdir / f"{srcstem}.{ext}"
+
+            if src.exists():
+                shutil.copy2(src, dst)
+
+                print(
+                    "COPIED:",
+                    src.relative_to(ROOT),
+                    "->",
+                    dst.relative_to(ROOT),
+                )
+
+                found = True
+                break
+
+        if not found:
+            print(
+                "WARNING: could not locate source for",
+                dst.name,
+            )
+
+
+# =====================================================================
+# 01 — ACCURACY/EFFICIENCY
+#
+# Broken axis:
+#   0.08–0.39%     | break |    99.5–100.5%
+# No line between methods.
+# =====================================================================
+
+eff = (
+    main_eff
+    .groupby(
+        "method_key",
+        as_index=False,
+    )
+    .agg(
+        trainable_pct=(
+            "trainable_pct",
+            "mean",
+        ),
+        train_seconds=(
+            "train_seconds_mean",
+            "mean",
+        ),
+    )
+)
+
+p = (
+    main_overall[
+        [
+            "method_key",
+            "macro_f1_mean",
+            "macro_f1_std_across_cells",
+        ]
+    ]
+    .merge(
+        eff,
+        on="method_key",
+    )
+)
+
+fig = plt.figure(
+    figsize=(15.3, 8.2),
+)
+
+gs = fig.add_gridspec(
+    1,
+    2,
+    width_ratios=[
+        5.0,
+        1.2,
+    ],
+    wspace=0.045,
+)
+
+axL = fig.add_subplot(
+    gs[0, 0]
+)
+
+axR = fig.add_subplot(
+    gs[0, 1],
+    sharey=axL,
+)
+
+style(
+    axL,
+    "both",
+)
+
+style(
+    axR,
+    "both",
+)
+
+axL.set_xlim(
+    0.075,
+    0.395,
+)
+
+axR.set_xlim(
+    99.45,
+    100.55,
+)
+
+ymin = (
+    p["macro_f1_mean"].min()
+    - 0.055
+)
+
+ymax = (
+    p["macro_f1_mean"].max()
+    + 0.065
+)
+
+axL.set_ylim(
+    ymin,
+    ymax,
+)
+
+
+# add backgrounds AFTER limits
+subtle_gradient(axL)
+subtle_gradient(axR)
+
+
+slots = {
+    "role_adapter": (0.340, 0.616),
+    "category_lora": (0.340, 0.580),
+    "shared_lora_widehead": (0.340, 0.542),
+    "shared_lora": (0.300, 0.492),
+    "frozen": (0.170, 0.195),
+}
+
+
+for _, r in p[
+    p["method_key"]
+    != "full_ft"
+].iterrows():
+
+    m = r["method_key"]
+
+    x = r["trainable_pct"]
+    y = r["macro_f1_mean"]
+
+    axL.errorbar(
+        x,
+        y,
+        yerr=r[
+            "macro_f1_std_across_cells"
+        ],
+        fmt="none",
+        ecolor="black",
+        elinewidth=0.9,
+        capsize=4,
+        zorder=2,
+    )
+
+    axL.scatter(
+        x,
+        y,
+        s=190,
+        color=METHOD_COLOR[m],
+        edgecolor="black",
+        linewidth=0.8,
+        alpha=0.88,
+        zorder=5,
+    )
+
+    lx, ly = slots[m]
+
+    axL.annotate(
+        (
+            f"{mn(m)}\n"
+            f"F1 {y:.3f} · "
+            f"{x:.3f}%"
+        ),
+        xy=(
+            x,
+            y,
+        ),
+        xytext=(
+            lx,
+            ly,
+        ),
+        textcoords="data",
+        ha="left",
+        va="center",
+        fontsize=11,
+        color="black",
+        bbox=dict(
+            boxstyle="round,pad=0.22",
+            facecolor="#FFFDF8",
+            edgecolor="black",
+            linewidth=0.65,
+            alpha=0.94,
+        ),
+        arrowprops=dict(
+            arrowstyle="-",
+            linewidth=0.55,
+            color="black",
+        ),
+    )
+
+
+full = p[
+    p["method_key"]
+    == "full_ft"
+].iloc[0]
+
+axR.errorbar(
+    full["trainable_pct"],
+    full["macro_f1_mean"],
+    yerr=full[
+        "macro_f1_std_across_cells"
+    ],
+    fmt="none",
+    ecolor="black",
+    capsize=4,
+)
+
+axR.scatter(
+    full["trainable_pct"],
+    full["macro_f1_mean"],
+    s=205,
+    color=METHOD_COLOR["full_ft"],
+    edgecolor="black",
+    linewidth=0.8,
+    zorder=5,
+)
+
+box(
+    axR,
+    99.72,
+    full[
+        "macro_f1_mean"
+    ]
+    + 0.035,
+    (
+        f"Full FT\n"
+        f"F1 {full['macro_f1_mean']:.3f}"
+    ),
+    fs=11,
+)
+
+
+# break
+axL.spines["right"].set_visible(
+    False
+)
+
+axR.spines["left"].set_visible(
+    False
+)
+
+axR.tick_params(
+    left=False,
+    labelleft=False,
+)
+
+d = 0.012
+
+kw = dict(
+    color="black",
+    clip_on=False,
+    linewidth=1.1,
+)
+
+axL.plot(
+    (1-d, 1+d),
+    (-d, +d),
+    transform=axL.transAxes,
+    **kw,
+)
+
+axL.plot(
+    (1-d, 1+d),
+    (1-d, 1+d),
+    transform=axL.transAxes,
+    **kw,
+)
+
+axR.plot(
+    (-d, +d),
+    (-d, +d),
+    transform=axR.transAxes,
+    **kw,
+)
+
+axR.plot(
+    (-d, +d),
+    (1-d, 1+d),
+    transform=axR.transAxes,
+    **kw,
+)
+
+
+axL.set_ylabel(
+    "Mean within-domain Macro-F1"
+)
+
+fig.supxlabel(
+    "Trainable parameters (%)",
+    y=0.035,
+)
+
+fig.suptitle(
+    "Accuracy–efficiency landscape",
+    fontsize=25,
+    y=0.97,
+)
+
+fig.text(
+    0.12,
+    0.075,
+    "Marker size is fixed; uncertainty bars show variation across dataset × backbone cells.",
+    fontsize=11,
+)
+
+fig.subplots_adjust(
+    left=0.08,
+    right=0.98,
+    top=0.90,
+    bottom=0.12,
+)
+
+save(
+    fig,
+    "01_accuracy_efficiency",
+)
+
+
+# =====================================================================
+# 04 — TARGETED EFFECT FOREST
+# No Frozen, no giant +0.37 effect.
+# =====================================================================
+
+rows = []
+
+
+for comp in [
+    "shared_lora",
+    "shared_lora_widehead",
+    "category_lora",
+    "full_ft",
+]:
+
+    q = boot[
+        (
+            boot["method_a"]
+            == comp
+        )
+        &
+        (
+            boot["method_b"]
+            == "role_adapter"
+        )
+    ]
+
+    if len(q) == 1:
+
+        r = q.iloc[0]
+
+        rows.append({
+            "regime":
+                "Within-domain",
+
+            "comparison":
+                mn(comp),
+
+            "delta":
+                -r[
+                    "point_mean_delta"
+                ],
+
+            "low":
+                -r[
+                    "ci95_high"
+                ],
+
+            "high":
+                -r[
+                    "ci95_low"
+                ],
+        })
+
+
+for comp in [
+    "shared_lora",
+    "category_lora",
+    "full_ft",
+]:
+
+    d = (
+        core8[
+            "role_adapter"
+        ]
+        - core8[
+            comp
+        ]
+    ).to_numpy()
+
+    m, lo, hi = bootstrap_mean(
+        d,
+        seed=100
+        + len(rows),
+    )
+
+    rows.append({
+        "regime":
+            "Transfer",
+
+        "comparison":
+            mn(comp),
+
+        "delta":
+            m,
+
+        "low":
+            lo,
+
+        "high":
+            hi,
+    })
+
+
+for comp in [
+    "shared_lora",
+    "full_ft",
+]:
+
+    d = (
+        native_p[
+            "role_adapter"
+        ]
+        - native_p[
+            comp
+        ]
+    ).dropna().to_numpy()
+
+    m, lo, hi = bootstrap_mean(
+        d,
+        seed=200
+        + len(rows),
+    )
+
+    rows.append({
+        "regime":
+            "Native",
+
+        "comparison":
+            mn(comp),
+
+        "delta":
+            m,
+
+        "low":
+            lo,
+
+        "high":
+            hi,
+    })
+
+
+forest = pd.DataFrame(
+    rows
+)
+
+
+ycursor = 0
+ymap = {}
+
+for regime in [
+    "Within-domain",
+    "Transfer",
+    "Native",
+]:
+
+    inds = forest[
+        forest["regime"]
+        == regime
+    ].index
+
+    for idx in inds:
+        ymap[idx] = ycursor
+        ycursor += 1
+
+    ycursor += 0.75
+
+
+forest["y"] = forest.index.map(
+    ymap
+)
+
+
+fig, ax = plt.subplots(
+    figsize=(14.4, 8.8),
+)
+
+fig.subplots_adjust(
+    left=0.29,
+    right=0.90,
+    top=0.91,
+    bottom=0.11,
+)
+
+style(
+    ax,
+    "x",
+)
+
+ax.axvline(
+    0,
+    color="black",
+    linewidth=1.15,
+)
+
+
+colors = {
+    "Within-domain": vir(0.16),
+    "Transfer": vir(0.58),
+    "Native": vir(0.88),
+}
+
+
+for regime in [
+    "Within-domain",
+    "Transfer",
+    "Native",
+]:
+
+    q = forest[
+        forest["regime"]
+        == regime
+    ]
+
+    ax.axhspan(
+        q["y"].min() - 0.40,
+        q["y"].max() + 0.40,
+        color=colors[regime],
+        alpha=0.055,
+        zorder=-20,
+    )
+
+    ax.text(
+        -0.19,
+        q["y"].mean(),
+        regime,
+        transform=ax.get_yaxis_transform(),
+        ha="right",
+        va="center",
+        fontsize=14,
+        fontweight="bold",
+        color="black",
+    )
+
+
+for _, r in forest.iterrows():
+
+    ax.plot(
+        [
+            r["low"],
+            r["high"],
+        ],
+        [
+            r["y"],
+            r["y"],
+        ],
+        color="black",
+        linewidth=2.0,
+    )
+
+    ax.scatter(
+        r["delta"],
+        r["y"],
+        s=160,
+        color=(
+            vir(0.62)
+            if r["delta"] >= 0
+            else vir(0.94)
+        ),
+        edgecolor="black",
+        linewidth=0.8,
+        zorder=4,
+    )
+
+    box(
+        ax,
+        r["high"] + 0.004,
+        r["y"],
+        (
+            f"{r['delta']:+.3f}\n"
+            f"[{r['low']:+.3f}, "
+            f"{r['high']:+.3f}]"
+        ),
+        fs=9.5,
+        ha="left",
+    )
+
+
+ax.set_yticks(
+    forest["y"]
+)
+
+ax.set_yticklabels(
+    [
+        f"vs {x}"
+        for x in forest[
+            "comparison"
+        ]
+    ]
+)
+
+ax.invert_yaxis()
+
+
+xmin = forest[
+    "low"
+].min()
+
+xmax = forest[
+    "high"
+].max()
+
+span = xmax - xmin
+
+ax.set_xlim(
+    xmin - 0.12 * span,
+    xmax + 0.50 * span,
+)
+
+ax.set_xlabel(
+    "Role Adapter − comparator (Macro-F1)"
+)
+
+ax.set_title(
+    "Effect sizes across evaluation regimes"
+)
+
+subtle_gradient(
+    ax,
+    alpha=0.35,
+)
+
+save(
+    fig,
+    "04_effect_sizes",
+)
+
+
+# =====================================================================
+# 06 — IL-TUR ASYMMETRY AS SIGNED BARS
+# =====================================================================
+
+ctrl = transfer[
+    (
+        (
+            (
+                transfer["source"]
+                == "iltur_cl"
+            )
+            &
+            (
+                transfer["target"]
+                == "iltur_it"
+            )
+        )
+        |
+        (
+            (
+                transfer["source"]
+                == "iltur_it"
+            )
+            &
+            (
+                transfer["target"]
+                == "iltur_cl"
+            )
+        )
+    )
+    &
+    (
+        transfer["method"].isin(
+            METHODS4
+        )
+    )
+]
+
+
+rows = []
+
+for method in METHODS4:
+
+    a = ctrl[
+        (
+            ctrl["source"]
+            == "iltur_cl"
+        )
+        &
+        (
+            ctrl["target"]
+            == "iltur_it"
+        )
+        &
+        (
+            ctrl["method"]
+            == method
+        )
+    ].iloc[0]
+
+    b = ctrl[
+        (
+            ctrl["source"]
+            == "iltur_it"
+        )
+        &
+        (
+            ctrl["target"]
+            == "iltur_cl"
+        )
+        &
+        (
+            ctrl["method"]
+            == method
+        )
+    ].iloc[0]
+
+    rows.append({
+        "method": method,
+
+        "f1_a":
+            a["macro_f1_mean"],
+
+        "f1_b":
+            b["macro_f1_mean"],
+
+        "f1_delta":
+            b["macro_f1_mean"]
+            - a["macro_f1_mean"],
+
+        "ret_a":
+            a["retention"],
+
+        "ret_b":
+            b["retention"],
+
+        "ret_delta":
+            b["retention"]
+            - a["retention"],
+    })
+
+
+asym = pd.DataFrame(
+    rows
+)
+
+
+fig, axes = plt.subplots(
+    1,
+    2,
+    figsize=(16.4, 7.2),
+    layout="constrained",
+)
+
+
+configs = [
+    (
+        axes[0],
+        "f1_delta",
+        "f1_a",
+        "f1_b",
+        "Macro-F1 asymmetry",
+    ),
+    (
+        axes[1],
+        "ret_delta",
+        "ret_a",
+        "ret_b",
+        "Retention asymmetry",
+    ),
+]
+
+
+for ax, delta_col, a_col, b_col, title in configs:
+
+    style(
+        ax,
+        "x",
+    )
+
+    ax.axvline(
+        0,
+        color="black",
+        linewidth=1.0,
+    )
+
+    yy = np.arange(
+        len(asym)
+    )
+
+    vals = asym[
+        delta_col
+    ].to_numpy()
+
+    for y, (_, r) in zip(
+        yy,
+        asym.iterrows(),
+    ):
+
+        val = r[
+            delta_col
+        ]
+
+        ax.barh(
+            y,
+            val,
+            height=0.48,
+            color=METHOD_COLOR[
+                r["method"]
+            ],
+            edgecolor="black",
+            linewidth=0.8,
+            alpha=0.78,
+        )
+
+        box(
+            ax,
+            val + (
+                0.004
+                if val >= 0
+                else -0.004
+            ),
+            y,
+            (
+                f"{val:+.3f}\n"
+                f"{r[a_col]:.3f}"
+                f" → "
+                f"{r[b_col]:.3f}"
+            ),
+            fs=9.5,
+            ha=(
+                "left"
+                if val >= 0
+                else "right"
+            ),
+        )
+
+    ax.set_yticks(
+        yy
+    )
+
+    ax.set_yticklabels(
+        [
+            mn(x)
+            for x in asym[
+                "method"
+            ]
+        ]
+    )
+
+    ax.invert_yaxis()
+
+    ma = max(
+        abs(vals)
+    )
+
+    ax.set_xlim(
+        -max(
+            0.015,
+            ma * 0.35,
+        ),
+        ma * 1.75,
+    )
+
+    ax.set_xlabel(
+        "IT → CL minus CL → IT"
+    )
+
+    ax.set_title(
+        title
+    )
+
+    ax.text(
+        0.98,
+        0.04,
+        "positive = IT → CL transfers better",
+        transform=ax.transAxes,
+        ha="right",
+        fontsize=11,
+    )
+
+    subtle_gradient(
+        ax,
+        alpha=0.35,
+    )
+
+
+fig.suptitle(
+    "Controlled IL-TUR directional asymmetry",
+    fontsize=25,
+)
+
+save(
+    fig,
+    "06_iltur_asymmetry",
+)
+
+
+# =====================================================================
+# 08 — BACKBONE GAP TO FULL FT
+#
+# Raw dataset deltas + paired-bootstrap mean CI.
+# Targeted common x-range.
+# =====================================================================
+
+methods = [
+    "role_adapter",
+    "category_lora",
+    "shared_lora_widehead",
+    "shared_lora",
+]
+
+all_deltas = {}
+
+for model in BACKBONES:
+
+    pvt = (
+        main_cells[
+            main_cells["model_key"]
+            == model
+        ]
+        .pivot_table(
+            index="dataset_key",
+            columns="method_key",
+            values="macro_f1_mean",
+        )
+    )
+
+    for method in methods:
+
+        all_deltas[
+            (
+                model,
+                method,
+            )
+        ] = (
+            pvt[method]
+            - pvt["full_ft"]
+        ).dropna().to_numpy()
+
+
+flat = np.concatenate(
+    list(
+        all_deltas.values()
+    )
+)
+
+xmin = flat.min() - 0.025
+xmax = flat.max() + 0.035
+
+
+fig, axes = plt.subplots(
+    1,
+    3,
+    figsize=(19.5, 7.2),
+    layout="constrained",
+    sharex=True,
+    sharey=True,
+)
+
+
+for ax, model in zip(
+    axes,
+    BACKBONES,
+):
+
+    style(
+        ax,
+        "x",
+    )
+
+    ax.axvline(
+        0,
+        color="black",
+        linewidth=1.05,
+    )
+
+    for yy, method in enumerate(
+        methods
+    ):
+
+        vals = all_deltas[
+            (
+                model,
+                method,
+            )
+        ]
+
+        m, lo, hi = bootstrap_mean(
+            vals,
+            seed=400 + yy,
+        )
+
+        # raw datasets
+        jitter = np.linspace(
+            -0.11,
+            0.11,
+            len(vals),
+        )
+
+        ax.scatter(
+            vals,
+            np.full(
+                len(vals),
+                yy,
+            )
+            + jitter,
+            s=35,
+            color=METHOD_COLOR[
+                method
+            ],
+            edgecolor="black",
+            linewidth=0.4,
+            alpha=0.32,
+        )
+
+        # CI
+        ax.plot(
+            [
+                lo,
+                hi,
+            ],
+            [
+                yy,
+                yy,
+            ],
+            color="black",
+            linewidth=2.0,
+        )
+
+        ax.scatter(
+            m,
+            yy,
+            marker="D",
+            s=120,
+            color=METHOD_COLOR[
+                method
+            ],
+            edgecolor="black",
+            linewidth=0.8,
+            zorder=5,
+        )
+
+        box(
+            ax,
+            hi + 0.004,
+            yy,
+            f"{m:+.3f}",
+            fs=9,
+            ha="left",
+        )
+
+    ax.set_xlim(
+        xmin,
+        xmax,
+    )
+
+    ax.set_yticks(
+        np.arange(
+            len(methods)
+        )
+    )
+
+    ax.set_yticklabels(
+        [
+            mn(m)
+            for m in methods
+        ]
+    )
+
+    ax.invert_yaxis()
+
+    ax.set_title(
+        BACKBONE_LABEL[
+            model
+        ]
+    )
+
+    ax.set_xlabel(
+        "PEFT − Full FT"
+    )
+
+    subtle_gradient(
+        ax,
+        alpha=0.28,
+    )
+
+
+fig.suptitle(
+    "Backbone-specific adaptation gap to full fine-tuning",
+    fontsize=25,
+)
+
+save(
+    fig,
+    "08_backbone_gap_to_fullft",
+)
+
+
+# =====================================================================
+# 09 — CROSS-REGIME GAIN SPECTRUM
+# No bottom annotation collision.
+# =====================================================================
+
+atomic = []
+
+
+for _, r in within4.iterrows():
+
+    atomic.append({
+        "regime":
+            "Within-domain",
+
+        "delta":
+            (
+                r["role_adapter"]
+                - r["shared_lora"]
+            ),
+    })
+
+
+for _, r in transfer_rs.iterrows():
+
+    atomic.append({
+        "regime":
+            "Transfer",
+
+        "delta":
+            r[
+                "delta_role_minus_shared"
+            ],
+    })
+
+
+for ds in native_p.index:
+
+    atomic.append({
+        "regime":
+            "Native",
+
+        "delta":
+            (
+                native_p.loc[
+                    ds,
+                    "role_adapter",
+                ]
+                - native_p.loc[
+                    ds,
+                    "shared_lora",
+                ]
+            ),
+    })
+
+
+atomic = pd.DataFrame(
+    atomic
+)
+
+
+fig, ax = plt.subplots(
+    figsize=(15.4, 7.8),
+)
+
+fig.subplots_adjust(
+    left=0.08,
+    right=0.98,
+    top=0.87,
+    bottom=0.13,
+)
+
+style(
+    ax,
+    "y",
+)
+
+ax.axhline(
+    0,
+    color="black",
+    linewidth=1.0,
+)
+
+
+regime_colors = {
+    "Within-domain": vir(0.16),
+    "Transfer": vir(0.58),
+    "Native": vir(0.90),
+}
+
+
+cursor = 0
+
+for regime in [
+    "Within-domain",
+    "Transfer",
+    "Native",
+]:
+
+    q = (
+        atomic[
+            atomic["regime"]
+            == regime
+        ]
+        .sort_values(
+            "delta"
+        )
+    )
+
+    xs = np.arange(
+        cursor,
+        cursor + len(q),
+    )
+
+    vals = q[
+        "delta"
+    ].to_numpy()
+
+    color = regime_colors[
+        regime
+    ]
+
+    for x, v in zip(
+        xs,
+        vals,
+    ):
+
+        ax.plot(
+            [
+                x,
+                x,
+            ],
+            [
+                0,
+                v,
+            ],
+            color=color,
+            linewidth=1.0,
+            alpha=0.36,
+        )
+
+    ax.scatter(
+        xs,
+        vals,
+        s=66,
+        color=color,
+        edgecolor="black",
+        linewidth=0.45,
+        alpha=0.87,
+        zorder=4,
+    )
+
+    center = (
+        xs[0]
+        + xs[-1]
+    ) / 2
+
+    wins = int(
+        (
+            vals > 0
+        ).sum()
+    )
+
+    ax.text(
+        center,
+        0.965,
+        (
+            f"{regime}\n"
+            f"{wins}/{len(vals)} positive"
+        ),
+        transform=ax.get_xaxis_transform(),
+        ha="center",
+        va="top",
+        fontsize=11.5,
+        fontweight="bold",
+        bbox=dict(
+            boxstyle="round,pad=0.22",
+            facecolor="#FFFDF8",
+            edgecolor="black",
+            linewidth=0.65,
+            alpha=0.93,
+        ),
+    )
+
+    cursor = (
+        xs[-1]
+        + 2
+    )
+
+
+mean_delta = atomic[
+    "delta"
+].mean()
+
+ax.axhline(
+    mean_delta,
+    linestyle="--",
+    linewidth=1.6,
+    color=vir(0.62),
+)
+
+ax.text(
+    0.99,
+    mean_delta,
+    (
+        f" overall mean "
+        f"{mean_delta:+.3f} "
+    ),
+    transform=ax.get_yaxis_transform(),
+    ha="right",
+    va="bottom",
+    fontsize=11,
+    bbox=dict(
+        facecolor="#FFFDF8",
+        edgecolor="black",
+        linewidth=0.6,
+        alpha=0.92,
+    ),
+)
+
+ax.set_xticks(
+    []
+)
+
+ax.set_xlabel(
+    "Atomic evaluation cells ordered within each regime",
+    labelpad=10,
+)
+
+ax.set_ylabel(
+    "Role Adapter − Shared LoRA (Macro-F1)"
+)
+
+ax.set_title(
+    "Cross-regime consistency spectrum"
+)
+
+subtle_gradient(
+    ax,
+    alpha=0.30,
+)
+
+save(
+    fig,
+    "09_cross_regime_consistency",
+)
+
+
+# =====================================================================
+# 11 — MECHANISTIC ABLATION
+# Fix both ridiculous scales.
+# =====================================================================
+
+fig, axes = plt.subplots(
+    1,
+    2,
+    figsize=(16.4, 7.4),
+    layout="constrained",
+)
+
+
+# LEFT
+ax = axes[0]
+
+style(
+    ax,
+    "x",
+)
+
+q = mech.copy()
+
+q[
+    "delta"
+] = (
+    q["true_category_f1"]
+    - q["role_adapter_f1"]
+)
+
+q = q.sort_values(
+    "delta"
+)
+
+yy = np.arange(
+    len(q)
+)
+
+ax.axvline(
+    0,
+    color="black",
+    linewidth=1.0,
+)
+
+
+for y, (_, r) in zip(
+    yy,
+    q.iterrows(),
+):
+
+    d = r["delta"]
+
+    ax.plot(
+        [
+            0,
+            d,
+        ],
+        [
+            y,
+            y,
+        ],
+        color=(
+            vir(0.68)
+            if d >= 0
+            else vir(0.94)
+        ),
+        linewidth=2.3,
+        alpha=0.72,
+    )
+
+    ax.scatter(
+        d,
+        y,
+        s=145,
+        color=(
+            vir(0.68)
+            if d >= 0
+            else vir(0.94)
+        ),
+        edgecolor="black",
+        linewidth=0.8,
+    )
+
+    box(
+        ax,
+        d + (
+            0.0025
+            if d >= 0
+            else -0.0025
+        ),
+        y,
+        f"{d:+.3f}",
+        fs=9.5,
+        ha=(
+            "left"
+            if d >= 0
+            else "right"
+        ),
+    )
+
+
+ax.set_yticks(
+    yy
+)
+
+ax.set_yticklabels(
+    [
+        dn(x)
+        for x in q[
+            "dataset"
+        ]
+    ]
+)
+
+xmin = q["delta"].min() - 0.010
+xmax = q["delta"].max() + 0.014
+
+ax.set_xlim(
+    xmin,
+    xmax,
+)
+
+ax.set_xlabel(
+    "True category LoRA − Role Adapter"
+)
+
+ax.set_title(
+    "Does role-specific encoder LoRA help?"
+)
+
+subtle_gradient(
+    ax,
+    alpha=0.28,
+)
+
+
+# RIGHT
+ax = axes[1]
+
+style(
+    ax,
+    "both",
+)
+
+
+ineff = (
+    main_eff[
+        main_eff["model_key"]
+        == "inlegalbert"
+    ]
+    .set_index(
+        "method_key"
+    )
+)
+
+perf = (
+    main_cells[
+        main_cells["model_key"]
+        == "inlegalbert"
+    ]
+    .groupby(
+        "method_key"
+    )[
+        "macro_f1_mean"
+    ]
+    .mean()
+)
+
+
+pts = [
+    (
+        "shared_lora",
+        ineff.loc[
+            "shared_lora",
+            "peak_vram_gb_mean",
+        ],
+        perf.loc[
+            "shared_lora"
+        ],
+    ),
+    (
+        "category_lora",
+        ineff.loc[
+            "category_lora",
+            "peak_vram_gb_mean",
+        ],
+        perf.loc[
+            "category_lora"
+        ],
+    ),
+    (
+        "role_adapter",
+        ineff.loc[
+            "role_adapter",
+            "peak_vram_gb_mean",
+        ],
+        perf.loc[
+            "role_adapter"
+        ],
+    ),
+    (
+        "true_category_lora",
+        mech[
+            "true_category_vram_gb"
+        ].mean(),
+        mech[
+            "true_category_f1"
+        ].mean(),
+    ),
+]
+
+
+xvals = [
+    x
+    for m, x, y
+    in pts
+]
+
+yvals = [
+    y
+    for m, x, y
+    in pts
+]
+
+
+ax.set_xlim(
+    min(xvals) - 0.8,
+    max(xvals) + 1.2,
+)
+
+ax.set_ylim(
+    min(yvals) - 0.025,
+    max(yvals) + 0.035,
+)
+
+
+offsets = {
+    "shared_lora":
+        (10, -23),
+
+    "category_lora":
+        (10, 13),
+
+    "role_adapter":
+        (10, 32),
+
+    "true_category_lora":
+        (-10, 18),
+}
+
+
+for m, x, y in pts:
+
+    ax.scatter(
+        x,
+        y,
+        s=185,
+        color=METHOD_COLOR[m],
+        edgecolor="black",
+        linewidth=0.8,
+        alpha=0.88,
+    )
+
+    dx, dy = offsets[m]
+
+    ax.annotate(
+        (
+            f"{mn(m)}\n"
+            f"{x:.2f} GB · "
+            f"F1 {y:.3f}"
+        ),
+        (
+            x,
+            y,
+        ),
+        xytext=(
+            dx,
+            dy,
+        ),
+        textcoords="offset points",
+        ha=(
+            "right"
+            if dx < 0
+            else "left"
+        ),
+        fontsize=10,
+        color="black",
+        bbox=dict(
+            boxstyle="round,pad=0.20",
+            facecolor="#FFFDF8",
+            edgecolor="black",
+            linewidth=0.65,
+            alpha=0.94,
+        ),
+        arrowprops=dict(
+            arrowstyle="-",
+            color="black",
+            linewidth=0.55,
+        ),
+    )
+
+
+ax.set_xlabel(
+    "Peak GPU memory (GB)"
+)
+
+ax.set_ylabel(
+    "Mean Macro-F1"
+)
+
+ax.set_title(
+    "Mechanistic cost–performance trade-off"
+)
+
+subtle_gradient(
+    ax,
+    alpha=0.25,
+)
+
+
+fig.suptitle(
+    "Mechanistic ablation of role-specific adaptation",
+    fontsize=25,
+)
+
+save(
+    fig,
+    "11_mechanistic_ablation",
+)
+
+
+# =====================================================================
+# 12 — REDESIGNED COMPLETELY
+#
+# Ordered bivariate strip:
+# Top row    = Shared LoRA transfer F1
+# Bottom row = Role Adapter gain
+#
+# Sorted by baseline transfer difficulty.
+# No giant empty scatter background.
+# =====================================================================
+
+strip = (
+    transfer_rs
+    .sort_values(
+        "shared_lora_f1"
+    )
+    .reset_index(
+        drop=True
+    )
+)
+
+strip[
+    "name"
+] = (
+    strip["source"]
+    .map(DATASET_SHORT)
+    + "→"
+    + strip["target"]
+    .map(DATASET_SHORT)
+)
+
+
+rho, pval = spearmanr(
+    strip[
+        "shared_lora_f1"
+    ],
+    strip[
+        "delta_role_minus_shared"
+    ],
+)
+
+
+baseline = strip[
+    "shared_lora_f1"
+].to_numpy()
+
+gain = strip[
+    "delta_role_minus_shared"
+].to_numpy()
+
+
+fig = plt.figure(
+    figsize=(17.5, 6.0),
+    layout="constrained",
+)
+
+gs = fig.add_gridspec(
+    2,
+    2,
+    width_ratios=[
+        1,
+        0.028,
+    ],
+    height_ratios=[
+        1,
+        1,
+    ],
+)
+
+ax1 = fig.add_subplot(
+    gs[0, 0]
+)
+
+ax2 = fig.add_subplot(
+    gs[1, 0]
+)
+
+cax1 = fig.add_subplot(
+    gs[0, 1]
+)
+
+cax2 = fig.add_subplot(
+    gs[1, 1]
+)
+
+
+# TOP ROW
+norm1 = Normalize(
+    baseline.min(),
+    baseline.max(),
+)
+
+ax1.imshow(
+    baseline.reshape(
+        1,
+        -1,
+    ),
+    aspect="auto",
+    cmap="viridis",
+    norm=norm1,
+    alpha=0.82,
+)
+
+# BOTTOM ROW
+max_gain = max(
+    abs(
+        gain.min()
+    ),
+    abs(
+        gain.max()
+    ),
+)
+
+norm2 = Normalize(
+    -max_gain,
+    max_gain,
+)
+
+ax2.imshow(
+    gain.reshape(
+        1,
+        -1,
+    ),
+    aspect="auto",
+    cmap=CMAP_DELTA,
+    norm=norm2,
+    alpha=0.88,
+)
+
+
+for ax in [
+    ax1,
+    ax2,
+]:
+
+    ax.set_yticks(
+        []
+    )
+
+    ax.set_xticks(
+        np.arange(
+            len(strip)
+        )
+    )
+
+    ax.set_xticks(
+        np.arange(
+            -0.5,
+            len(strip),
+            1,
+        ),
+        minor=True,
+    )
+
+    ax.grid(
+        which="minor",
+        axis="x",
+        color="black",
+        linewidth=0.65,
+        alpha=0.45,
+    )
+
+    ax.tick_params(
+        which="minor",
+        bottom=False,
+    )
+
+    for s in ax.spines.values():
+        s.set_color(
+            "black"
+        )
+        s.set_linewidth(
+            0.8
+        )
+
+
+ax1.set_xticklabels(
+    []
+)
+
+ax2.set_xticklabels(
+    strip["name"],
+    rotation=60,
+    ha="right",
+    fontsize=11,
+)
+
+
+for j, v in enumerate(
+    baseline
+):
+
+    ax1.text(
+        j,
+        0,
+        f"{v:.2f}",
+        ha="center",
+        va="center",
+        fontsize=9.5,
+        color="black",
+        bbox=dict(
+            boxstyle="round,pad=0.12",
+            facecolor="#FFFDF8",
+            edgecolor="black",
+            linewidth=0.45,
+            alpha=0.76,
+        ),
+    )
+
+
+for j, v in enumerate(
+    gain
+):
+
+    ax2.text(
+        j,
+        0,
+        f"{v:+.2f}",
+        ha="center",
+        va="center",
+        fontsize=9.5,
+        color="black",
+        bbox=dict(
+            boxstyle="round,pad=0.12",
+            facecolor="#FFFDF8",
+            edgecolor="black",
+            linewidth=0.45,
+            alpha=0.76,
+        ),
+    )
+
+
+ax1.set_ylabel(
+    "Shared\nLoRA F1",
+    rotation=0,
+    labelpad=47,
+    va="center",
+)
+
+ax2.set_ylabel(
+    "Role\nadvantage",
+    rotation=0,
+    labelpad=47,
+    va="center",
+)
+
+
+cb1 = fig.colorbar(
+    mpl.cm.ScalarMappable(
+        norm=norm1,
+        cmap="viridis",
+    ),
+    cax=cax1,
+)
+
+cb1.set_label(
+    "Baseline F1",
+    fontsize=12,
+)
+
+
+cb2 = fig.colorbar(
+    mpl.cm.ScalarMappable(
+        norm=norm2,
+        cmap=CMAP_DELTA,
+    ),
+    cax=cax2,
+)
+
+cb2.set_label(
+    "Δ F1",
+    fontsize=12,
+)
+
+
+fig.suptitle(
+    "Role-aware gains ordered by transfer difficulty",
+    fontsize=25,
+)
+
+fig.text(
+    0.80,
+    0.93,
+    (
+        f"Spearman ρ = {rho:+.2f}, "
+        f"p = {pval:.3f}"
+    ),
+    fontsize=12,
+    ha="right",
+)
+
+save(
+    fig,
+    "12_transfer_difficulty_gain_strip",
+)
+
+
+# =====================================================================
+# 16 — TAXONOMY SENSITIVITY
+#
+# Simple grouped bars are actually clearer here.
+# =====================================================================
+
+common_inlegal = (
+    main_cells[
+        (
+            main_cells["model_key"]
+            == "inlegalbert"
+        )
+        &
+        (
+            main_cells[
+                "dataset_key"
+            ].isin(
+                [
+                    "legaleval",
+                    "iltur_cl",
+                    "iltur_it",
+                ]
+            )
+        )
+    ]
+    .pivot_table(
+        index="dataset_key",
+        columns="method_key",
+        values="macro_f1_mean",
+    )
+)
+
+
+tax_rows = []
+
+for ds in [
+    "legaleval",
+    "iltur_cl",
+    "iltur_it",
+]:
+
+    c = (
+        common_inlegal.loc[
+            ds,
+            "role_adapter",
+        ]
+        - common_inlegal.loc[
+            ds,
+            "shared_lora",
+        ]
+    )
+
+    n = (
+        native_p.loc[
+            ds,
+            "role_adapter",
+        ]
+        - native_p.loc[
+            ds,
+            "shared_lora",
+        ]
+    )
+
+    tax_rows.append({
+        "dataset": ds,
+        "common": c,
+        "native": n,
+        "shift": n - c,
+    })
+
+
+tax = pd.DataFrame(
+    tax_rows
+)
+
+
+fig, ax = plt.subplots(
+    figsize=(12.8, 7.3),
+    layout="constrained",
+)
+
+style(
+    ax,
+    "y",
+)
+
+
+x = np.arange(
+    len(tax)
+)
+
+w = 0.31
+
+
+b1 = ax.bar(
+    x - w / 2,
+    tax["common"],
+    width=w,
+    color=vir(0.32),
+    edgecolor="black",
+    linewidth=0.8,
+    alpha=0.74,
+    label="Common-7",
+)
+
+b2 = ax.bar(
+    x + w / 2,
+    tax["native"],
+    width=w,
+    color=vir(0.76),
+    edgecolor="black",
+    linewidth=0.8,
+    alpha=0.76,
+    label="Native taxonomy",
+)
+
+
+for i, r in tax.iterrows():
+
+    for xx, val in [
+        (
+            x[i] - w/2,
+            r["common"],
+        ),
+        (
+            x[i] + w/2,
+            r["native"],
+        ),
+    ]:
+
+        box(
+            ax,
+            xx,
+            val + 0.0045,
+            f"{val:+.3f}",
+            fs=9.5,
+        )
+
+    top = max(
+        r["common"],
+        r["native"],
+    )
+
+    ax.annotate(
+        (
+            f"shift "
+            f"{r['shift']:+.3f}"
+        ),
+        xy=(
+            x[i],
+            top + 0.010,
+        ),
+        ha="center",
+        va="bottom",
+        fontsize=10,
+        color="black",
+    )
+
+
+ax.axhline(
+    0,
+    color="black",
+    linewidth=0.9,
+)
+
+ax.set_xticks(
+    x
+)
+
+ax.set_xticklabels(
+    [
+        dn(ds)
+        for ds in tax[
+            "dataset"
+        ]
+    ]
+)
+
+ax.set_ylabel(
+    "Role Adapter − Shared LoRA (Macro-F1)"
+)
+
+ax.set_title(
+    "Sensitivity of the observed gain to taxonomy harmonization"
+)
+
+ax.legend(
+    ncol=2,
+    loc="upper center",
+    frameon=True,
+    edgecolor="black",
+)
+
+upper = float(
+    tax[
+        [
+            "common",
+            "native",
+        ]
+    ].to_numpy().max()
+) + 0.030
+
+lower = min(
+    0.0,
+    float(
+        tax[
+            [
+                "common",
+                "native",
+            ]
+        ].to_numpy().min()
+    ),
+) - 0.010
+
+ax.set_ylim(
+    lower,
+    upper,
+)
+
+subtle_gradient(
+    ax,
+    alpha=0.25,
+)
+
+save(
+    fig,
+    "16_taxonomy_sensitivity",
+)
+
+
+# =====================================================================
+# 17 — NEW:
+# HEADROOM GEOMETRY
+#
+# x = FullFT - Shared
+# y = Role - Shared
+#
+# y=x means Role fully closes the gap.
+# =====================================================================
+
+geo = (
+    within4
+    .reset_index()
+    .copy()
+)
+
+geo[
+    "headroom"
+] = (
+    geo["full_ft"]
+    - geo["shared_lora"]
+)
+
+geo[
+    "role_gain"
+] = (
+    geo["role_adapter"]
+    - geo["shared_lora"]
+)
+
+
+fig, ax = plt.subplots(
+    figsize=(12.5, 9.0),
+    layout="constrained",
+)
+
+style(
+    ax,
+    "both",
+)
+
+
+xmin = min(
+    geo["headroom"].min(),
+    -0.02,
+) - 0.015
+
+xmax = (
+    geo["headroom"].max()
+    + 0.025
+)
+
+ymin = min(
+    geo["role_gain"].min(),
+    -0.02,
+) - 0.015
+
+ymax = (
+    geo["role_gain"].max()
+    + 0.025
+)
+
+
+ax.set_xlim(
+    xmin,
+    xmax,
+)
+
+ax.set_ylim(
+    ymin,
+    ymax,
+)
+
+
+# regions
+xx = np.linspace(
+    max(0, xmin),
+    xmax,
+    300,
+)
+
+# partial recovery
+ax.fill_between(
+    xx,
+    0,
+    xx,
+    color=vir(0.50),
+    alpha=0.07,
+    zorder=-20,
+)
+
+# above full FT
+ax.fill_between(
+    xx,
+    xx,
+    ymax,
+    color=vir(0.82),
+    alpha=0.06,
+    zorder=-20,
+)
+
+
+ax.axhline(
+    0,
+    color="black",
+    linewidth=0.9,
+)
+
+ax.axvline(
+    0,
+    color="black",
+    linewidth=0.9,
+)
+
+diag_lo = max(
+    xmin,
+    ymin,
+)
+
+diag_hi = min(
+    xmax,
+    ymax,
+)
+
+ax.plot(
+    [
+        diag_lo,
+        diag_hi,
+    ],
+    [
+        diag_lo,
+        diag_hi,
+    ],
+    linestyle="--",
+    color="black",
+    linewidth=1.2,
+    alpha=0.65,
+)
+
+
+markers = {
+    "inlegalbert": "o",
+    "legalbert": "s",
+    "deberta": "^",
+}
+
+
+for _, r in geo.iterrows():
+
+    ax.scatter(
+        r["headroom"],
+        r["role_gain"],
+        s=135,
+        marker=markers[
+            r["model_key"]
+        ],
+        color=DATASET_COLOR[
+            r["dataset_key"]
+        ],
+        edgecolor="black",
+        linewidth=0.75,
+        alpha=0.84,
+        zorder=4,
+    )
+
+    ax.text(
+        r["headroom"] + 0.003,
+        r["role_gain"] + 0.003,
+        DATASET_SHORT[
+            r["dataset_key"]
+        ],
+        fontsize=9,
+        color="black",
+    )
+
+
+ax.set_xlabel(
+    "Available headroom: Full FT − Shared LoRA"
+)
+
+ax.set_ylabel(
+    "Recovered headroom: Role Adapter − Shared LoRA"
+)
+
+ax.set_title(
+    "Geometry of Full-FT headroom recovery"
+)
+
+
+ax.text(
+    0.97,
+    0.96,
+    (
+        "above diagonal: Role Adapter > Full FT\n"
+        "between 0 and diagonal: partial recovery\n"
+        "below 0: Role Adapter < Shared LoRA"
+    ),
+    transform=ax.transAxes,
+    ha="right",
+    va="top",
+    fontsize=11,
+    bbox=dict(
+        boxstyle="round,pad=0.25",
+        facecolor="#FFFDF8",
+        edgecolor="black",
+        linewidth=0.65,
+        alpha=0.93,
+    ),
+)
+
+
+legend_backbone = [
+    Line2D(
+        [0],
+        [0],
+        marker=markers[b],
+        linestyle="none",
+        markerfacecolor="#AAAAAA",
+        markeredgecolor="black",
+        markersize=9,
+        label=BACKBONE_LABEL[b],
+    )
+    for b in BACKBONES
+]
+
+leg1 = ax.legend(
+    handles=legend_backbone,
+    title="Backbone",
+    loc="lower right",
+    frameon=True,
+    edgecolor="black",
+)
+
+ax.add_artist(
+    leg1
+)
+
+save(
+    fig,
+    "17_headroom_geometry",
+)
+
+
+# =====================================================================
+# 18 — NEW:
+# ADAPTATION PHASE MAP
+#
+# Winner + margin to runner-up in each of 15 cells.
+# =====================================================================
+
+phase = (
+    main_cells[
+        main_cells[
+            "method_key"
+        ].isin(
+            METHODS6
+        )
+    ]
+    .pivot_table(
+        index="model_key",
+        columns=[
+            "dataset_key",
+            "method_key",
+        ],
+        values="macro_f1_mean",
+    )
+)
+
+
+records = []
+
+for model in BACKBONES:
+
+    for ds in DATASETS:
+
+        vals = {
+            method:
+                phase.loc[
+                    model,
+                    (
+                        ds,
+                        method,
+                    ),
+                ]
+            for method in METHODS6
+        }
+
+        vals = {
+            k: v
+            for k, v in vals.items()
+            if pd.notna(v)
+        }
+
+        ranked = sorted(
+            vals.items(),
+            key=lambda z:
+                z[1],
+            reverse=True,
+        )
+
+        winner, best = ranked[0]
+        runner, second = ranked[1]
+
+        records.append({
+            "model": model,
+            "dataset": ds,
+            "winner": winner,
+            "winner_f1": best,
+            "runner": runner,
+            "margin": best - second,
+        })
+
+
+phase_df = pd.DataFrame(
+    records
+)
+
+
+max_margin = phase_df[
+    "margin"
+].max()
+
+
+fig, ax = plt.subplots(
+    figsize=(13.8, 7.7),
+    layout="constrained",
+)
+
+style(
+    ax,
+    None,
+)
+
+
+ax.set_xlim(
+    -0.5,
+    len(DATASETS) - 0.5,
+)
+
+ax.set_ylim(
+    len(BACKBONES) - 0.5,
+    -0.5,
+)
+
+
+for i, model in enumerate(
+    BACKBONES
+):
+
+    for j, ds in enumerate(
+        DATASETS
+    ):
+
+        r = phase_df[
+            (
+                phase_df["model"]
+                == model
+            )
+            &
+            (
+                phase_df["dataset"]
+                == ds
+            )
+        ].iloc[0]
+
+        alpha = (
+            0.38
+            + 0.50
+            * r["margin"]
+            / max_margin
+        )
+
+        rect = FancyBboxPatch(
+            (
+                j - 0.46,
+                i - 0.43,
+            ),
+            0.92,
+            0.86,
+            boxstyle=(
+                "round,pad=0.02,"
+                "rounding_size=0.07"
+            ),
+            facecolor=METHOD_COLOR[
+                r["winner"]
+            ],
+            edgecolor="black",
+            linewidth=0.9,
+            alpha=alpha,
+        )
+
+        ax.add_patch(
+            rect
+        )
+
+        ax.text(
+            j,
+            i - 0.07,
+            METHOD_SHORT[
+                r["winner"]
+            ],
+            ha="center",
+            va="center",
+            fontsize=16,
+            fontweight="bold",
+            color="black",
+        )
+
+        ax.text(
+            j,
+            i + 0.18,
+            (
+                f"{r['winner_f1']:.3f}\n"
+                f"+{r['margin']:.3f}"
+            ),
+            ha="center",
+            va="center",
+            fontsize=9.5,
+            color="black",
+            bbox=dict(
+                boxstyle="round,pad=0.14",
+                facecolor="#FFFDF8",
+                edgecolor="black",
+                linewidth=0.45,
+                alpha=0.76,
+            ),
+        )
+
+
+ax.set_xticks(
+    range(
+        len(DATASETS)
+    )
+)
+
+ax.set_xticklabels(
+    [
+        dn(d)
+        for d in DATASETS
+    ],
+    rotation=15,
+    ha="right",
+)
+
+ax.set_yticks(
+    range(
+        len(BACKBONES)
+    )
+)
+
+ax.set_yticklabels(
+    [
+        BACKBONE_LABEL[b]
+        for b in BACKBONES
+    ]
+)
+
+ax.set_title(
+    "Adaptation phase map across datasets and backbones"
+)
+
+ax.set_xlabel(
+    "Dataset"
+)
+
+ax.set_ylabel(
+    "Backbone"
+)
+
+
+legend = [
+    Line2D(
+        [0],
+        [0],
+        marker="s",
+        linestyle="none",
+        markersize=12,
+        markerfacecolor=METHOD_COLOR[m],
+        markeredgecolor="black",
+        label=mn(m),
+    )
+    for m in METHODS6
+]
+
+ax.legend(
+    handles=legend,
+    ncol=3,
+    loc="upper center",
+    bbox_to_anchor=(
+        0.5,
+        -0.14,
+    ),
+    frameon=True,
+    edgecolor="black",
+)
+
+fig.text(
+    0.5,
+    0.015,
+    "Cell text: winning method, winning Macro-F1, and margin over the runner-up; stronger fill indicates a larger margin.",
+    ha="center",
+    fontsize=11,
+)
+
+save(
+    fig,
+    "18_adaptation_phase_map",
+)
+
+
+# =====================================================================
+# 19 — NEW:
+# METHOD BEHAVIOR CLUSTERING
+#
+# Spearman correlation across the 15 dataset×backbone cells.
+# =====================================================================
+
+beh = (
+    main_cells[
+        main_cells[
+            "method_key"
+        ].isin(
+            METHODS6
+        )
+    ]
+    .pivot_table(
+        index=[
+            "model_key",
+            "dataset_key",
+        ],
+        columns="method_key",
+        values="macro_f1_mean",
+    )[
+        METHODS6
+    ]
+    .dropna()
+)
+
+
+corr = beh.corr(
+    method="spearman"
+)
+
+
+dist = (
+    1.0
+    - corr
+)
+
+np.fill_diagonal(
+    dist.values,
+    0.0,
+)
+
+condensed = squareform(
+    dist.values,
+    checks=False,
+)
+
+Z = linkage(
+    condensed,
+    method="average",
+)
+
+order_idx = dendrogram(
+    Z,
+    no_plot=True,
+)["leaves"]
+
+ordered = [
+    corr.index[i]
+    for i in order_idx
+]
+
+C = corr.loc[
+    ordered,
+    ordered,
+]
+
+
+fig = plt.figure(
+    figsize=(11.8, 10.0),
+    layout="constrained",
+)
+
+gs = fig.add_gridspec(
+    2,
+    2,
+    height_ratios=[
+        0.28,
+        1.0,
+    ],
+    width_ratios=[
+        1.0,
+        0.045,
+    ],
+)
+
+
+ax_d = fig.add_subplot(
+    gs[0, 0]
+)
+
+dendrogram(
+    Z,
+    labels=[
+        mn(x)
+        for x in corr.index
+    ],
+    ax=ax_d,
+    color_threshold=None,
+    above_threshold_color="black",
+)
+
+ax_d.set_xticks(
+    []
+)
+
+ax_d.set_yticks(
+    []
+)
+
+for s in ax_d.spines.values():
+    s.set_visible(
+        False
+    )
+
+
+ax = fig.add_subplot(
+    gs[1, 0]
+)
+
+cax = fig.add_subplot(
+    gs[1, 1]
+)
+
+
+im = ax.imshow(
+    C.values,
+    cmap="viridis",
+    vmin=max(
+        0,
+        C.values.min() - 0.03,
+    ),
+    vmax=1.0,
+    alpha=0.88,
+)
+
+
+n = len(
+    ordered
+)
+
+ax.set_xticks(
+    range(n)
+)
+
+ax.set_yticks(
+    range(n)
+)
+
+ax.set_xticklabels(
+    [
+        mn(x)
+        for x in ordered
+    ],
+    rotation=30,
+    ha="right",
+)
+
+ax.set_yticklabels(
+    [
+        mn(x)
+        for x in ordered
+    ]
+)
+
+
+ax.set_xticks(
+    np.arange(
+        -0.5,
+        n,
+        1,
+    ),
+    minor=True,
+)
+
+ax.set_yticks(
+    np.arange(
+        -0.5,
+        n,
+        1,
+    ),
+    minor=True,
+)
+
+ax.grid(
+    which="minor",
+    color="black",
+    linewidth=0.7,
+    alpha=0.42,
+)
+
+ax.tick_params(
+    which="minor",
+    bottom=False,
+    left=False,
+)
+
+
+for i in range(n):
+
+    for j in range(n):
+
+        ax.text(
+            j,
+            i,
+            f"{C.iloc[i,j]:.2f}",
+            ha="center",
+            va="center",
+            fontsize=11,
+            color="black",
+            bbox=dict(
+                boxstyle="round,pad=0.12",
+                facecolor="#FFFDF8",
+                edgecolor="black",
+                linewidth=0.4,
+                alpha=0.67,
+            ),
+        )
+
+
+cb = fig.colorbar(
+    im,
+    cax=cax,
+)
+
+cb.set_label(
+    "Spearman correlation"
+)
+
+fig.suptitle(
+    "Similarity of method behavior across the 15 evaluation cells",
+    fontsize=24,
+)
+
+fig.text(
+    0.5,
+    0.012,
+    "Methods cluster by how similarly their performance changes across datasets and backbones, not by their absolute mean score.",
+    ha="center",
+    fontsize=11,
+)
+
+save(
+    fig,
+    "19_method_behavior_clustering",
+)
+
+
+# =====================================================================
+# FINAL GALLERY
+# =====================================================================
+
+pngs = sorted(
+    OUT.glob(
+        "[0-9][0-9]_*.png"
+    )
+)
+
+cols = 3
+
+rows = math.ceil(
+    len(pngs)
+    / cols
+)
+
+
+fig, axes = plt.subplots(
+    rows,
+    cols,
+    figsize=(
+        19,
+        rows * 5.2,
+    ),
+)
+
+axes = np.atleast_1d(
+    axes
+).ravel()
+
+
+for ax, fn in zip(
+    axes,
+    pngs,
+):
+
+    img = plt.imread(
+        fn
+    )
+
+    ax.imshow(
+        img
+    )
+
+    ax.set_title(
+        fn.stem,
+        fontsize=11,
+    )
+
+    ax.axis(
+        "off"
+    )
+
+
+for ax in axes[
+    len(pngs):
+]:
+    ax.axis(
+        "off"
+    )
+
+
+fig.tight_layout()
+
+fig.savefig(
+    OUT
+    / "00_gallery.png",
+    dpi=165,
+    bbox_inches="tight",
+)
+
+plt.close(
+    fig
+)
+
+
+# =====================================================================
+# INDEX
+# =====================================================================
+
+index_text = """FINAL PAPER FIGURES
+
+01 Accuracy–efficiency landscape
+02 Pairwise dominance across evaluation regimes
+03 Cross-domain transfer atlas
+04 Effect-size forest
+05 Within-domain performance distributions
+06 Controlled IL-TUR directional asymmetry
+07 LoRA rank sensitivity
+08 Backbone-specific gap to Full FT
+09 Cross-regime consistency spectrum
+10 Source-domain transfer robustness
+11 Mechanistic ablation and memory cost
+12 Transfer difficulty vs Role Adapter gain strip
+13 Full-FT headroom recovery distributions
+14 Directed transfer network
+15 Role-vs-Shared gain ridgelines
+16 Taxonomy sensitivity
+17 Full-FT headroom recovery geometry
+18 Adaptation phase map
+19 Method-behavior clustering
+"""
+
+(
+    OUT
+    / "FIGURE_INDEX.txt"
+).write_text(
+    index_text
+)
+
+
+print()
+print("=" * 100)
+print("FINAL CANONICAL FIGURE PACKAGE")
+print("=" * 100)
+
+print(
+    "directory:",
+    OUT,
+)
+
+print(
+    "numbered PNGs:",
+    len(
+        list(
+            OUT.glob(
+                "[0-9][0-9]_*.png"
+            )
+        )
+    ),
+)
+
+print(
+    "numbered PDFs:",
+    len(
+        list(
+            OUT.glob(
+                "[0-9][0-9]_*.pdf"
+            )
+        )
+    ),
+)
+
+print(
+    "gallery:",
+    OUT
+    / "00_gallery.png",
+)
+
+print("=" * 100)

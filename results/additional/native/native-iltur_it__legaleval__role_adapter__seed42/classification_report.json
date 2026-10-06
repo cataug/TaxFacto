@@ -1,0 +1,87 @@
+{
+  "ArgumentPetitioner": {
+    "precision": 0.4262295081967213,
+    "recall": 0.49056603773584906,
+    "f1-score": 0.45614035087719296,
+    "support": 53.0
+  },
+  "ArgumentRespondent": {
+    "precision": 0.7142857142857143,
+    "recall": 0.09259259259259259,
+    "f1-score": 0.16393442622950818,
+    "support": 54.0
+  },
+  "Fact": {
+    "precision": 0.6709677419354839,
+    "recall": 0.7938931297709924,
+    "f1-score": 0.7272727272727273,
+    "support": 131.0
+  },
+  "Issue": {
+    "precision": 0.6363636363636364,
+    "recall": 0.6363636363636364,
+    "f1-score": 0.6363636363636364,
+    "support": 11.0
+  },
+  "None": {
+    "precision": 0.375,
+    "recall": 0.3333333333333333,
+    "f1-score": 0.35294117647058826,
+    "support": 18.0
+  },
+  "PrecedentNotReliedUpon": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 8.0
+  },
+  "PrecedentOverruled": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "PrecedentReliedUpon": {
+    "precision": 0.6808510638297872,
+    "recall": 0.47761194029850745,
+    "f1-score": 0.5614035087719298,
+    "support": 134.0
+  },
+  "RatioOfTheDecision": {
+    "precision": 0.46946564885496184,
+    "recall": 0.7321428571428571,
+    "f1-score": 0.5720930232558139,
+    "support": 168.0
+  },
+  "RulingByLowerCourt": {
+    "precision": 0.6981132075471698,
+    "recall": 0.3854166666666667,
+    "f1-score": 0.4966442953020134,
+    "support": 96.0
+  },
+  "RulingByPresentCourt": {
+    "precision": 0.5769230769230769,
+    "recall": 0.7142857142857143,
+    "f1-score": 0.6382978723404256,
+    "support": 21.0
+  },
+  "Statute": {
+    "precision": 0.75,
+    "recall": 0.8041237113402062,
+    "f1-score": 0.7761194029850746,
+    "support": 97.0
+  },
+  "accuracy": 0.5878634639696586,
+  "macro avg": {
+    "precision": 0.49984996649471264,
+    "recall": 0.4550274682941962,
+    "f1-score": 0.44843420165574255,
+    "support": 791.0
+  },
+  "weighted avg": {
+    "precision": 0.6128911388118093,
+    "recall": 0.5878634639696586,
+    "f1-score": 0.5680897015198385,
+    "support": 791.0
+  }
+}

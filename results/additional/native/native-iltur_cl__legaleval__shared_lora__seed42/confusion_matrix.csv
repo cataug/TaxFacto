@@ -1,0 +1,13 @@
+,ArgumentPetitioner,ArgumentRespondent,Dissent,Fact,Issue,None,PrecedentNotReliedUpon,PrecedentReliedUpon,RatioOfTheDecision,RulingByLowerCourt,RulingByPresentCourt,Statute
+ArgumentPetitioner,65,17,0,20,0,0,0,12,14,0,0,0
+ArgumentRespondent,48,7,0,9,0,0,0,0,6,0,0,0
+Dissent,6,4,0,5,0,0,0,7,48,0,1,0
+Fact,2,2,0,203,0,0,0,0,33,0,3,2
+Issue,0,0,0,0,0,0,0,0,2,0,0,0
+None,0,0,0,1,0,0,0,0,0,0,0,0
+PrecedentNotReliedUpon,0,0,0,1,0,0,0,15,3,0,0,0
+PrecedentReliedUpon,4,1,0,40,0,0,0,88,89,0,0,8
+RatioOfTheDecision,5,17,0,72,0,0,0,40,296,0,1,2
+RulingByLowerCourt,1,1,0,10,0,0,0,0,7,0,4,0
+RulingByPresentCourt,0,0,0,1,0,0,0,0,2,0,9,0
+Statute,0,0,0,6,0,0,0,2,23,0,1,53

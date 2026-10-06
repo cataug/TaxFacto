@@ -1,0 +1,42 @@
+dataset,label,count
+deeprhole,Argument,817
+deeprhole,Facts,2197
+deeprhole,Precedent,1450
+deeprhole,Ratio of the decision,3594
+deeprhole,Ruling by Lower Court,313
+deeprhole,Ruling by Present Court,218
+deeprhole,Statute,628
+legaleval,ANALYSIS,12551
+legaleval,ARG_PETITIONER,1538
+legaleval,ARG_RESPONDENT,791
+legaleval,FAC,7027
+legaleval,ISSUE,432
+legaleval,NONE,1627
+legaleval,PREAMBLE,4516
+legaleval,PRE_NOT_RELIED,169
+legaleval,PRE_RELIED,1601
+legaleval,RATIO,848
+legaleval,RLC,920
+legaleval,RPC,1196
+legaleval,STA,542
+legalseg,,642168
+legalseg,Arguments of Petitioner,86383
+legalseg,Arguments of Respondent,67815
+legalseg,Decision,23961
+legalseg,Facts,223760
+legalseg,Issue,17362
+legalseg,Reasoning,268892
+marro_india,ARG,1760
+marro_india,FAC,6832
+marro_india,PRE,3412
+marro_india,RATIO,18137
+marro_india,RLC,702
+marro_india,RPC,559
+marro_india,STA,1576
+marro_uk,ARG,717
+marro_uk,FAC,2885
+marro_uk,PRE,1676
+marro_uk,RATIO,12521
+marro_uk,RLC,571
+marro_uk,RPC,221
+marro_uk,STA,1306

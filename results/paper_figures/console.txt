@@ -1,0 +1,13 @@
+COPIED: results/paper_figures_v3/02_pairwise_dominance.png -> results/paper_figures/02_pairwise_dominance.png
+COPIED: results/paper_figures_v3/02_pairwise_dominance.pdf -> results/paper_figures/02_pairwise_dominance.pdf
+COPIED: results/paper_figures_v3/03_transfer_atlas.png -> results/paper_figures/03_transfer_atlas.png
+COPIED: results/paper_figures_v3/03_transfer_atlas.pdf -> results/paper_figures/03_transfer_atlas.pdf
+
+====================================================================================================
+FINAL CANONICAL FIGURE PACKAGE
+====================================================================================================
+directory: /home/tahiti/TaxFacto/results/paper_figures
+numbered PNGs: 20
+numbered PDFs: 19
+gallery: /home/tahiti/TaxFacto/results/paper_figures/00_gallery.png
+====================================================================================================

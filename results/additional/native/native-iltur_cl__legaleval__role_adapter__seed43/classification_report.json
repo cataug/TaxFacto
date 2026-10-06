@@ -1,0 +1,87 @@
+{
+  "ArgumentPetitioner": {
+    "precision": 0.5337837837837838,
+    "recall": 0.6171875,
+    "f1-score": 0.572463768115942,
+    "support": 128.0
+  },
+  "ArgumentRespondent": {
+    "precision": 0.1111111111111111,
+    "recall": 0.02857142857142857,
+    "f1-score": 0.045454545454545456,
+    "support": 70.0
+  },
+  "Dissent": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 71.0
+  },
+  "Fact": {
+    "precision": 0.595679012345679,
+    "recall": 0.7877551020408163,
+    "f1-score": 0.6783831282952548,
+    "support": 245.0
+  },
+  "Issue": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 2.0
+  },
+  "None": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 1.0
+  },
+  "PrecedentNotReliedUpon": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 19.0
+  },
+  "PrecedentReliedUpon": {
+    "precision": 0.5,
+    "recall": 0.3739130434782609,
+    "f1-score": 0.42786069651741293,
+    "support": 230.0
+  },
+  "RatioOfTheDecision": {
+    "precision": 0.5647668393782384,
+    "recall": 0.7551963048498845,
+    "f1-score": 0.6462450592885376,
+    "support": 433.0
+  },
+  "RulingByLowerCourt": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 23.0
+  },
+  "RulingByPresentCourt": {
+    "precision": 0.375,
+    "recall": 0.5,
+    "f1-score": 0.42857142857142855,
+    "support": 12.0
+  },
+  "Statute": {
+    "precision": 0.847457627118644,
+    "recall": 0.5882352941176471,
+    "f1-score": 0.6944444444444444,
+    "support": 85.0
+  },
+  "accuracy": 0.5633055344958302,
+  "macro avg": {
+    "precision": 0.2939831978114547,
+    "recall": 0.3042382227548365,
+    "f1-score": 0.29111858922396383,
+    "support": 1319.0
+  },
+  "weighted avg": {
+    "precision": 0.4989548141642573,
+    "recall": 0.5633055344958302,
+    "f1-score": 0.5193811620353093,
+    "support": 1319.0
+  }
+}

@@ -1,0 +1,21 @@
+FINAL PAPER FIGURES
+
+01 Accuracy–efficiency landscape
+02 Pairwise dominance across evaluation regimes
+03 Cross-domain transfer atlas
+04 Effect-size forest
+05 Within-domain performance distributions
+06 Controlled IL-TUR directional asymmetry
+07 LoRA rank sensitivity
+08 Backbone-specific gap to Full FT
+09 Cross-regime consistency spectrum
+10 Source-domain transfer robustness
+11 Mechanistic ablation and memory cost
+12 Transfer difficulty vs Role Adapter gain strip
+13 Full-FT headroom recovery distributions
+14 Directed transfer network
+15 Role-vs-Shared gain ridgelines
+16 Taxonomy sensitivity
+17 Full-FT headroom recovery geometry
+18 Adaptation phase map
+19 Method-behavior clustering

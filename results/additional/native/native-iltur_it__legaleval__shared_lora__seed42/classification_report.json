@@ -1,0 +1,87 @@
+{
+  "ArgumentPetitioner": {
+    "precision": 0.3625,
+    "recall": 0.5471698113207547,
+    "f1-score": 0.43609022556390975,
+    "support": 53.0
+  },
+  "ArgumentRespondent": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 54.0
+  },
+  "Fact": {
+    "precision": 0.6167664670658682,
+    "recall": 0.7862595419847328,
+    "f1-score": 0.6912751677852349,
+    "support": 131.0
+  },
+  "Issue": {
+    "precision": 0.8,
+    "recall": 0.36363636363636365,
+    "f1-score": 0.5,
+    "support": 11.0
+  },
+  "None": {
+    "precision": 0.38461538461538464,
+    "recall": 0.2777777777777778,
+    "f1-score": 0.3225806451612903,
+    "support": 18.0
+  },
+  "PrecedentNotReliedUpon": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 8.0
+  },
+  "PrecedentOverruled": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 0.0
+  },
+  "PrecedentReliedUpon": {
+    "precision": 0.5555555555555556,
+    "recall": 0.44776119402985076,
+    "f1-score": 0.49586776859504134,
+    "support": 134.0
+  },
+  "RatioOfTheDecision": {
+    "precision": 0.44982698961937717,
+    "recall": 0.7738095238095238,
+    "f1-score": 0.5689277899343544,
+    "support": 168.0
+  },
+  "RulingByLowerCourt": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 96.0
+  },
+  "RulingByPresentCourt": {
+    "precision": 0.48,
+    "recall": 0.5714285714285714,
+    "f1-score": 0.5217391304347826,
+    "support": 21.0
+  },
+  "Statute": {
+    "precision": 0.7403846153846154,
+    "recall": 0.7938144329896907,
+    "f1-score": 0.7661691542288557,
+    "support": 97.0
+  },
+  "accuracy": 0.5309734513274337,
+  "macro avg": {
+    "precision": 0.36580408435340006,
+    "recall": 0.38013810141477206,
+    "f1-score": 0.3585541568086224,
+    "support": 791.0
+  },
+  "weighted avg": {
+    "precision": 0.4395002155518497,
+    "recall": 0.5309734513274337,
+    "f1-score": 0.4706414158630755,
+    "support": 791.0
+  }
+}

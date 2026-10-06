@@ -1,0 +1,7 @@
+dataset,split_canonical,rows,documents,labels
+iltur_cl,dev,1396,5,10
+iltur_cl,test,1339,5,12
+iltur_cl,train,10593,40,12
+iltur_it,dev,746,5,11
+iltur_it,test,858,5,11
+iltur_it,train,6252,40,12

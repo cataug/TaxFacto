@@ -1,0 +1,116 @@
+
+================================================================================
+legalseg
+================================================================================
+raw rows: 1,565,606
+raw docs: 7120
+original split counts:
+split_original
+train    1122376
+dev       293362
+test      149868
+Name: count, dtype: int64
+Using OFFICIAL train/dev/test.
+documents crossing splits: 0
+after split-aware dedup: 1,330,341 removed: 235,265
+
+                   rows  documents  labels
+split_canonical                           
+dev              246625       1421       7
+test             138445        712       7
+train            945271       4982       7
+
+================================================================================
+legaleval
+================================================================================
+raw rows: 36,034
+raw docs: 325
+original split counts:
+split_original
+train    28986
+test      4158
+dev       2890
+Name: count, dtype: int64
+Using OFFICIAL train/dev/test.
+documents crossing splits: 0
+after split-aware dedup: 33,758 removed: 2,276
+
+                  rows  documents  labels
+split_canonical                          
+dev               2812         30      13
+test              4023         50      13
+train            26923        243      13
+
+================================================================================
+marro_india
+================================================================================
+raw rows: 33,331
+raw docs: 170
+original split counts:
+split_original
+train    30729
+test      2602
+Name: count, dtype: int64
+Preserved official test; created deterministic dev from train.
+documents crossing splits: 0
+after split-aware dedup: 32,978 removed: 353
+
+                  rows  documents  labels
+split_canonical                          
+dev               3546         18       7
+test              2566         20       7
+train            26866        132       7
+
+================================================================================
+marro_uk
+================================================================================
+raw rows: 20,335
+raw docs: 59
+original split counts:
+split_original
+train    18155
+test      2180
+Name: count, dtype: int64
+Preserved official test; created deterministic dev from train.
+documents crossing splits: 0
+after split-aware dedup: 19,897 removed: 438
+
+                  rows  documents  labels
+split_canonical                          
+dev               3637         10       7
+test              2176          9       7
+train            14084         40       7
+
+================================================================================
+FINAL MANIFESTS READY
+================================================================================
+    dataset split   rows  documents  labels
+   legalseg   dev 246625       1421       7
+   legalseg  test 138445        712       7
+   legalseg train 945271       4982       7
+  legaleval   dev   2812         30      13
+  legaleval  test   4023         50      13
+  legaleval train  26923        243      13
+marro_india   dev   3546         18       7
+marro_india  test   2566         20       7
+marro_india train  26866        132       7
+   marro_uk   dev   3637         10       7
+   marro_uk  test   2176          9       7
+   marro_uk train  14084         40       7
+
+TOTAL: 1,416,974
+
+Leakage:
+    dataset split_a split_b  normalized_overlap
+   legalseg   train     dev                   0
+   legalseg   train    test                   0
+   legalseg     dev    test                   0
+  legaleval   train     dev                   0
+  legaleval   train    test                   0
+  legaleval     dev    test                   0
+marro_india   train     dev                   0
+marro_india   train    test                   0
+marro_india     dev    test                   0
+   marro_uk   train     dev                   0
+   marro_uk   train    test                   0
+   marro_uk     dev    test                   0

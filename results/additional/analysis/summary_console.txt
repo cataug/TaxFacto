@@ -1,0 +1,93 @@
+==============================================================================================================
+ADDITIONAL EXPERIMENTS
+==============================================================================================================
+transfer runs: 168
+native runs  : 27
+
+==============================================================================================================
+IL-TUR CONTROLLED TRANSFER
+==============================================================================================================
+  source   target        method macro_f1_mean macro_f1_std target_within_f1 transfer_gap retention
+iltur_cl iltur_it category_lora        0.4969       0.0062           0.6441      +0.1472     0.772
+iltur_cl iltur_it       full_ft        0.4793       0.0115           0.6499      +0.1706     0.737
+iltur_cl iltur_it  role_adapter        0.4975       0.0017           0.6494      +0.1519     0.766
+iltur_cl iltur_it   shared_lora        0.4888       0.0221           0.6019      +0.1131     0.812
+iltur_it iltur_cl category_lora        0.5199       0.0113           0.5526      +0.0327     0.941
+iltur_it iltur_cl       full_ft        0.5251       0.0163           0.5401      +0.0151     0.972
+iltur_it iltur_cl  role_adapter        0.5150       0.0050           0.5499      +0.0348     0.937
+iltur_it iltur_cl   shared_lora        0.5145       0.0269           0.5344      +0.0199     0.963
+
+==============================================================================================================
+ROLE ADAPTER TRANSFER MATRIX
+rows=source, cols=target; diagonal=within-domain
+==============================================================================================================
+             legaleval  marro_india  marro_uk  iltur_cl  iltur_it
+legaleval       0.7644       0.5559    0.3226    0.4524    0.5236
+marro_india     0.5544       0.5659    0.4334    0.5190    0.4953
+marro_uk        0.5386       0.5503    0.4894    0.5059    0.5034
+iltur_cl        0.5535       0.4917    0.3130    0.5499    0.4975
+iltur_it        0.6697       0.6053    0.4119    0.5150    0.6494
+
+==============================================================================================================
+SHARED LORA TRANSFER MATRIX
+==============================================================================================================
+             legaleval  marro_india  marro_uk  iltur_cl  iltur_it
+legaleval       0.7410       0.5354    0.3197    0.4440    0.5309
+marro_india     0.5345       0.5580    0.4361    0.5166    0.4650
+marro_uk        0.4177       0.4914    0.4519    0.4013    0.4115
+iltur_cl        0.5146       0.4544    0.2913    0.5344    0.4888
+iltur_it        0.6207       0.5438    0.4196    0.5145    0.6019
+
+==============================================================================================================
+ROLE ADAPTER - SHARED LORA
+==============================================================================================================
+             legaleval  marro_india  marro_uk  iltur_cl  iltur_it
+legaleval      +0.0234      +0.0205   +0.0029   +0.0084   -0.0073
+marro_india    +0.0199      +0.0079   -0.0027   +0.0025   +0.0303
+marro_uk       +0.1209      +0.0589   +0.0375   +0.1046   +0.0919
+iltur_cl       +0.0389      +0.0373   +0.0217   +0.0154   +0.0087
+iltur_it       +0.0489      +0.0615   -0.0077   +0.0005   +0.0475
+
+20-DIRECTION SUMMARY
+mean delta = +0.0330
+median delta = +0.0211
+wins/ties/losses = 17 / 0 / 3
+Wilcoxon W=14.000, p=0.000209808
+
+==============================================================================================================
+NATIVE-TAXONOMY VALIDATION
+==============================================================================================================
+dataset       iltur_cl  iltur_it  legaleval
+method                                     
+full_ft         0.3136    0.4932     0.5884
+role_adapter    0.2971    0.4937     0.5807
+shared_lora     0.2965    0.4175     0.5395
+
+NATIVE ROLE-ADAPTER DELTAS
+
+iltur_cl
+  role_adapter - shared_lora  = +0.0007
+  role_adapter - full_ft      = -0.0165
+
+iltur_it
+  role_adapter - shared_lora  = +0.0762
+  role_adapter - full_ft      = +0.0005
+
+legaleval
+  role_adapter - shared_lora  = +0.0412
+  role_adapter - full_ft      = -0.0077
+
+==============================================================================================================
+SAVED
+==============================================================================================================
+results/additional/analysis/native_all_runs.csv
+results/additional/analysis/native_summary.csv
+results/additional/analysis/summary_console.txt
+results/additional/analysis/transfer_all_runs.csv
+results/additional/analysis/transfer_matrix_role_adapter.csv
+results/additional/analysis/transfer_matrix_role_minus_shared.csv
+results/additional/analysis/transfer_matrix_shared_lora.csv
+results/additional/analysis/transfer_role_vs_shared.csv
+results/additional/analysis/transfer_summary.csv
+
+ADDITIONAL ANALYSIS COMPLETE

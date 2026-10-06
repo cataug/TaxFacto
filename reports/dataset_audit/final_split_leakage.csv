@@ -1,0 +1,13 @@
+dataset,split_a,split_b,normalized_overlap
+legalseg,train,dev,0
+legalseg,train,test,0
+legalseg,dev,test,0
+legaleval,train,dev,0
+legaleval,train,test,0
+legaleval,dev,test,0
+marro_india,train,dev,0
+marro_india,train,test,0
+marro_india,dev,test,0
+marro_uk,train,dev,0
+marro_uk,train,test,0
+marro_uk,dev,test,0

@@ -1,0 +1,121 @@
+==========================================================================================
+RAW IL-TUR
+==========================================================================================
+                           rows  docs  labels
+dataset  split_canonical                     
+iltur_cl dev               1396     5      10
+         test              1339     5      12
+         train            10593    40      12
+iltur_it dev                746     5      11
+         test               858     5      11
+         train             6252    40      12
+
+==========================================================================================
+ILTUR_CL
+==========================================================================================
+before : 13328
+after  : 12758
+removed: 570
+
+POST-CLEAN SPLIT OVERLAP
+train-dev  : 0
+train-test : 0
+dev  -test : 0
+
+DOCUMENT OVERLAP
+train-dev  : 0
+train-test : 0
+dev  -test : 0
+
+NATIVE
+                  rows  docs  labels
+split_canonical                     
+dev               1326     5      10
+test              1319     5      12
+train            10113    40      12
+
+COMMON-7
+                 rows  docs  labels
+split_canonical                    
+dev              1321     5       7
+test             1245     5       7
+train            9761    40       7
+
+split_canonical  dev  test  train
+label                            
+ARG              573   198   1965
+FAC              244   245   2829
+PRE              133   249   1345
+RATIO            285   433   2760
+RLC               21    23    436
+RPC               17    12     98
+STA               48    85    328
+
+==========================================================================================
+ILTUR_IT
+==========================================================================================
+before : 7856
+after  : 7624
+removed: 232
+
+POST-CLEAN SPLIT OVERLAP
+train-dev  : 0
+train-test : 0
+dev  -test : 0
+
+DOCUMENT OVERLAP
+train-dev  : 0
+train-test : 0
+dev  -test : 0
+
+NATIVE
+                 rows  docs  labels
+split_canonical                    
+dev               742     5      11
+test              791     5      11
+train            6091    40      12
+
+COMMON-7
+                 rows  docs  labels
+split_canonical                    
+dev               699     5       7
+test              762     5       7
+train            5786    40       7
+
+split_canonical  dev  test  train
+label                            
+ARG               92   107    964
+FAC              195   131   1094
+PRE              160   142    990
+RATIO            115   168   1417
+RLC               46    96    432
+RPC               31    21    183
+STA               60    97    706
+
+==========================================================================================
+FINAL SUMMARY
+==========================================================================================
+ dataset    task split_canonical  rows  documents  labels
+iltur_cl  native             dev  1326          5      10
+iltur_cl  native            test  1319          5      12
+iltur_cl  native           train 10113         40      12
+iltur_it  native             dev   742          5      11
+iltur_it  native            test   791          5      11
+iltur_it  native           train  6091         40      12
+iltur_cl common7             dev  1321          5       7
+iltur_cl common7            test  1245          5       7
+iltur_cl common7           train  9761         40       7
+iltur_it common7             dev   699          5       7
+iltur_it common7            test   762          5       7
+iltur_it common7           train  5786         40       7
+
+==========================================================================================
+SHA256
+==========================================================================================
+data/manifests_final/iltur_cl.parquet         7c58fe81bc59d8863e0c6f5925e29701d3fb1698eb183e41794d5a3631fd66b2
+data/manifests_final/iltur_it.parquet         b083618be2f4870b568daa5eb0fff8c9fb288c6fa392d29d60e20fafd463d041
+data/tasks/common7/iltur_cl.parquet           3d25f9d05e26208a24d5391e65f1f0dc310f75b641a77077ee66adf0237e7fbc
+data/tasks/common7/iltur_it.parquet           6245d802e7bd5c90c38f9b0015bb1e0feea218977f5a0c094a07409dc5b3fe54
+data/tasks/common7/iltur_all.parquet          89f1411e554f9b4ca8db01684b65ca0ed7153609e95f2391cfaa153254ff992a
+
+IL-TUR FINALIZED

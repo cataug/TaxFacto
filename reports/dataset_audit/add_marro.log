@@ -1,0 +1,95 @@
+
+================================================================================
+marro_india train IN-train-set.zip
+================================================================================
+documents: 150
+parsed rows: 30,729
+
+================================================================================
+marro_india test IN-test-set.zip
+================================================================================
+documents: 20
+parsed rows: 2,602
+
+================================================================================
+marro_uk train UK-train-set.zip
+================================================================================
+documents: 50
+parsed rows: 18,155
+
+================================================================================
+marro_uk test UK-test-set.zip
+================================================================================
+documents: 9
+parsed rows: 2,180
+
+================================================================================
+MARRO SUMMARY
+================================================================================
+dataset      split
+marro_india  test      2602
+             train    30729
+marro_uk     test      2180
+             train    18155
+dtype: int64
+
+LABEL COUNTS
+dataset      label
+marro_india  ARG       1788
+             FAC       6899
+             PRE       3445
+             RATIO    18223
+             RLC        707
+             RPC        665
+             STA       1604
+marro_uk     ARG        731
+             FAC       2915
+             PRE       1695
+             RATIO    12767
+             RLC        576
+             RPC        310
+             STA       1341
+dtype: int64
+
+Documents:
+dataset
+marro_india    170
+marro_uk        59
+Name: doc_id, dtype: int64
+
+bad/unparsed lines: 0
+Traceback (most recent call last):
+  File "/home/tahiti/TaxFacto/scripts/add_marro.py", line 252, in <module>
+    merged.to_parquet(
+  File "/home/tahiti/Malashin_Projects/.venv_a100/lib/python3.12/site-packages/pandas/util/_decorators.py", line 333, in wrapper
+    return func(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tahiti/Malashin_Projects/.venv_a100/lib/python3.12/site-packages/pandas/core/frame.py", line 3113, in to_parquet
+    return to_parquet(
+           ^^^^^^^^^^^
+  File "/home/tahiti/Malashin_Projects/.venv_a100/lib/python3.12/site-packages/pandas/io/parquet.py", line 480, in to_parquet
+    impl.write(
+  File "/home/tahiti/Malashin_Projects/.venv_a100/lib/python3.12/site-packages/pandas/io/parquet.py", line 190, in write
+    table = self.api.Table.from_pandas(df, **from_pandas_kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pyarrow/table.pxi", line 4623, in pyarrow.lib.Table.from_pandas
+  File "/home/tahiti/Malashin_Projects/.venv_a100/lib/python3.12/site-packages/pyarrow/pandas_compat.py", line 629, in dataframe_to_arrays
+    arrays[i] = maybe_fut.result()
+                ^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/usr/lib/python3.12/concurrent/futures/thread.py", line 58, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tahiti/Malashin_Projects/.venv_a100/lib/python3.12/site-packages/pyarrow/pandas_compat.py", line 603, in convert_column
+    raise e
+  File "/home/tahiti/Malashin_Projects/.venv_a100/lib/python3.12/site-packages/pyarrow/pandas_compat.py", line 597, in convert_column
+    result = pa.array(col, type=type_, from_pandas=True, safe=safe)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "pyarrow/array.pxi", line 358, in pyarrow.lib.array
+  File "pyarrow/array.pxi", line 85, in pyarrow.lib._ndarray_to_array
+  File "pyarrow/error.pxi", line 92, in pyarrow.lib.check_status
+pyarrow.lib.ArrowTypeError: ("Expected bytes, got a 'int' object", 'Conversion failed for column sentence_id with type object')

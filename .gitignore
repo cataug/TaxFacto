@@ -1,0 +1,53 @@
+
+# === TAXFACTO GENERATED IGNORE ===
+
+# environments / caches
+.venv/
+.venv*/
+venv/
+venv*/
+__pycache__/
+*.pyc
+.cache/
+**/.cache/
+.ipynb_checkpoints/
+
+# pretrained / trained models
+models/
+**/checkpoint-*/
+**/checkpoints/
+**/best_model/
+*.safetensors
+*.ckpt
+*.pth
+*.pt
+*.onnx
+
+# large/raw datasets
+data/raw/
+data/external/
+data/standardized/
+data/benchmark/
+
+# raw model predictions are reproducible but bulky
+**/test_predictions.csv
+**/*predictions*.parquet
+**/*predictions*.jsonl
+
+# archives / multimedia / binary datasets
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz
+*.tgz
+*.avi
+*.mp4
+*.mov
+*.wav
+
+# transient
+*.tmp
+*.swp
+.DS_Store
+

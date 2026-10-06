@@ -1,0 +1,4 @@
+dataset,rows,unique_text_exact,unique_text_normalized,unique_docs_nonempty,labels,mean_chars,median_chars
+legalseg,1565606,1343782,1338648,7120,7,173.86288568132724,147.0
+legaleval,36034,34249,34188,325,13,159.1627906976744,130.0
+deeprhole,9380,9232,9217,50,7,162.30255863539446,132.0

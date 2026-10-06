@@ -1,0 +1,55 @@
+Loaded: 1664686
+dataset
+deeprhole         9380
+legaleval        36034
+legalseg       1565606
+marro_india      33331
+marro_uk         20335
+dtype: int64
+
+After within-dataset dedup:
+before: 1664686
+after:  1426191
+
+dataset
+deeprhole         9217
+legaleval        33758
+legalseg       1330341
+marro_india      32978
+marro_uk         19897
+dtype: int64
+
+Cross-dataset overlap:
+  dataset_a   dataset_b     n_a     n_b  overlap      pct_a     pct_b
+  deeprhole   legaleval    9217   33758       51   0.553325  0.151075
+  deeprhole    legalseg    9217 1330341      878   9.525876  0.065998
+  deeprhole marro_india    9217   32978     9217 100.000000 27.948936
+  deeprhole    marro_uk    9217   19897        8   0.086796  0.040207
+  legaleval    legalseg   33758 1330341     1231   3.646543  0.092533
+  legaleval marro_india   33758   32978      102   0.302151  0.309297
+  legaleval    marro_uk   33758   19897       31   0.091830  0.155802
+   legalseg marro_india 1330341   32978     3491   0.262414 10.585845
+   legalseg    marro_uk 1330341   19897      125   0.009396  0.628235
+marro_india    marro_uk   32978   19897       16   0.048517  0.080414
+
+deeprhole      : dedup=9,217 clean=0 removed=9,217
+
+legaleval      : dedup=33,758 clean=32,481 removed=1,277
+
+legalseg       : dedup=1,330,341 clean=1,325,588 removed=4,753
+
+marro_india    : dedup=32,978 clean=21,111 removed=11,867
+
+marro_uk       : dedup=19,897 clean=19,769 removed=128
+
+========================================================================
+FINAL CLEAN BENCHMARK
+========================================================================
+    dataset  raw_rows  dedup_rows  cross_clean_rows  documents  labels
+  deeprhole      9380        9217                 0         50       7
+  legaleval     36034       33758             32481        325      13
+   legalseg   1565606     1330341           1325588       7120       7
+marro_india     33331       32978             21111        170       7
+   marro_uk     20335       19897             19769         59       7
+
+Saved to: /home/tahiti/TaxFacto/data/benchmark

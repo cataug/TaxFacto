@@ -1,0 +1,33 @@
+====================================================================================================
+DOCUMENT-LEVEL PAIRED BOOTSTRAP
+====================================================================================================
+bootstrap replicates: 10000
+
+inlegalbert    legaleval      docs=  50 OK
+inlegalbert    marro_india    docs=  20 OK
+inlegalbert    marro_uk       docs=   9 OK
+inlegalbert    iltur_cl       docs=   5 OK
+inlegalbert    iltur_it       docs=   5 OK
+legalbert      legaleval      docs=  50 OK
+legalbert      marro_india    docs=  20 OK
+legalbert      marro_uk       docs=   9 OK
+legalbert      iltur_cl       docs=   5 OK
+legalbert      iltur_it       docs=   5 OK
+deberta        legaleval      docs=  50 OK
+deberta        marro_india    docs=  20 OK
+deberta        marro_uk       docs=   9 OK
+deberta        iltur_cl       docs=   5 OK
+deberta        iltur_it       docs=   5 OK
+
+====================================================================================================
+GLOBAL HIERARCHICAL BOOTSTRAP
+====================================================================================================
+            method_a     method_b point_mean_delta ci95_low ci95_high p_delta_gt_0 p_delta_lt_0
+              frozen role_adapter          -0.3716  -0.4173   -0.3300       0.0000       1.0000
+             full_ft  shared_lora          +0.0895  +0.0520   +0.1344       1.0000       0.0000
+             full_ft role_adapter          +0.0273  +0.0053   +0.0544       0.9932       0.0068
+         shared_lora role_adapter          -0.0622  -0.0924   -0.0378       0.0000       1.0000
+shared_lora_widehead role_adapter          -0.0143  -0.0295   +0.0001       0.0253       0.9747
+       category_lora role_adapter          -0.0020  -0.0072   +0.0023       0.1504       0.8496
+
+BOOTSTRAP COMPLETE

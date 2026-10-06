@@ -1,0 +1,95 @@
+
+============================================================================
+legalseg
+============================================================================
+rows: 1,330,341
+docs: 7114
+original splits:
+split_original
+train    1008739
+dev       188273
+test      133329
+Name: count, dtype: int64
+
+canonical:
+                    rows  docs
+split_canonical               
+dev               126308   693
+test              146813   712
+train            1057220  5709
+
+============================================================================
+legaleval
+============================================================================
+rows: 33,758
+docs: 323
+original splits:
+split_original
+train    26923
+test      3995
+dev       2840
+Name: count, dtype: int64
+Preserving official LegalEval splits.
+
+canonical:
+                  rows  docs
+split_canonical             
+dev               2840    30
+test              3995    50
+train            26923   243
+
+============================================================================
+marro_india
+============================================================================
+rows: 32,978
+docs: 170
+original splits:
+split_original
+train    30430
+test      2548
+Name: count, dtype: int64
+
+canonical:
+                  rows  docs
+split_canonical             
+dev               3024    14
+test              2548    20
+train            27406   136
+
+============================================================================
+marro_uk
+============================================================================
+rows: 19,897
+docs: 59
+original splits:
+split_original
+train    17726
+test      2171
+Name: count, dtype: int64
+
+canonical:
+                  rows  docs
+split_canonical             
+dev               1964     6
+test              2171     9
+train            15762    44
+
+============================================================================
+FINAL CANONICAL BENCHMARK
+============================================================================
+    dataset split    rows  documents  labels
+   legalseg   dev  126308        693       7
+   legalseg  test  146813        712       7
+   legalseg train 1057220       5709       7
+  legaleval   dev    2840         30      13
+  legaleval  test    3995         50      13
+  legaleval train   26923        243      13
+marro_india   dev    3024         14       7
+marro_india  test    2548         20       7
+marro_india train   27406        136       7
+   marro_uk   dev    1964          6       7
+   marro_uk  test    2171          9       7
+   marro_uk train   15762         44       7
+
+TOTAL ROWS: 1,416,974
+Saved: /home/tahiti/TaxFacto/data/manifests

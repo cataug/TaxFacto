@@ -1,0 +1,7 @@
+dataset,split_a,split_b,overlap
+iltur_cl,train,dev,92
+iltur_cl,train,test,42
+iltur_cl,dev,test,52
+iltur_it,train,dev,3
+iltur_it,train,test,1
+iltur_it,dev,test,2

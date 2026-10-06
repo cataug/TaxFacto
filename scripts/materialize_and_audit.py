@@ -1,0 +1,734 @@
+from __future__ import annotations
+
+import csv
+import hashlib
+import json
+import re
+import unicodedata
+from collections import Counter
+from pathlib import Path
+
+import pandas as pd
+from datasets import load_dataset
+from tqdm import tqdm
+
+
+ROOT = Path.cwd()
+RAW = ROOT / "data" / "raw"
+MAT = ROOT / "data" / "materialized"
+STD = ROOT / "data" / "standardized"
+OUT = ROOT / "reports" / "dataset_audit"
+
+for p in (MAT, STD, OUT):
+    p.mkdir(parents=True, exist_ok=True)
+
+
+# ============================================================
+# Helpers
+# ============================================================
+
+def clean_text(x):
+    if x is None:
+        return ""
+    return re.sub(r"\s+", " ", str(x)).strip()
+
+
+def norm_text(x):
+    x = unicodedata.normalize("NFKC", clean_text(x)).casefold()
+    return re.sub(r"\s+", " ", x).strip()
+
+
+def aggressive_norm(x):
+    x = unicodedata.normalize("NFKC", clean_text(x)).casefold()
+    x = re.sub(r"[^\w]+", " ", x, flags=re.UNICODE)
+    return re.sub(r"\s+", " ", x).strip()
+
+
+def h64(x):
+    return int.from_bytes(
+        hashlib.blake2b(x.encode("utf-8"), digest_size=8).digest(),
+        "big",
+    )
+
+
+def plausible_text(x):
+    x = clean_text(x)
+    return bool(x)
+
+
+def ci_get(row, names):
+    lut = {str(k).lower(): k for k in row.keys()}
+    for n in names:
+        if n.lower() in lut:
+            return row[lut[n.lower()]]
+    return None
+
+
+def find_simple_col(columns, candidates):
+    lut = {str(c).lower(): c for c in columns}
+    for c in candidates:
+        if c.lower() in lut:
+            return lut[c.lower()]
+    for col in columns:
+        lc = str(col).lower()
+        for c in candidates:
+            if c.lower() in lc:
+                return col
+    return None
+
+
+def write_datasetdict(ds, name):
+    """
+    Export HF Dataset/DatasetDict into ordinary parquet files.
+    """
+    outdir = MAT / name
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    if hasattr(ds, "keys"):
+        splits = ds
+    else:
+        splits = {"train": ds}
+
+    print(f"\n{name}:")
+    for split, part in splits.items():
+        fn = outdir / f"{split}.parquet"
+        print(f"  {split:20s} rows={len(part):,} -> {fn}")
+        part.to_parquet(str(fn))
+
+        schema_fn = outdir / f"{split}.schema.txt"
+        schema_fn.write_text(
+            repr(part.features),
+            encoding="utf-8"
+        )
+
+    return splits
+
+
+# ============================================================
+# 1. Materialize missing / HF-backed datasets
+# ============================================================
+
+loaded = {}
+
+
+def try_load(key, repo, config=None, revision=None):
+    print("\n" + "=" * 78)
+    print(f"LOAD {key}: {repo}" + (f" / {config}" if config else ""))
+    print("=" * 78)
+
+    kwargs = {}
+    if config is not None:
+        kwargs["name"] = config
+    if revision is not None:
+        kwargs["revision"] = revision
+
+    try:
+        ds = load_dataset(repo, **kwargs)
+        loaded[key] = ds
+        write_datasetdict(ds, key)
+        print(f"OK: {key}")
+        return ds
+    except Exception as e:
+        print(f"FAILED: {key}")
+        print(type(e).__name__, str(e))
+        return None
+
+
+legalseg = try_load(
+    "legalseg",
+    "L-NLProc/LegalSeg_CSV",
+)
+
+legaleval = try_load(
+    "legaleval",
+    "opennyaiorg/InRhetoricalRoles",
+)
+
+iltur_rr = try_load(
+    "iltur_rr",
+    "Exploration-Lab/IL-TUR",
+    config="rr",
+)
+
+# CJPE is useful later but is NOT included in rhetorical-role overlap analysis.
+iltur_cjpe = try_load(
+    "iltur_cjpe",
+    "Exploration-Lab/IL-TUR",
+    config="cjpe",
+)
+
+marro = try_load(
+    "marro",
+    "subinay612/MARRO_Rhetorical-Role-Labeling",
+)
+
+
+# ============================================================
+# 2. Convert rhetorical-role corpora to common schema
+#
+# dataset, split, doc_id, sentence_id, text, label
+# ============================================================
+
+records = []
+
+
+def add(dataset, split, doc_id, sid, text, label):
+    text = clean_text(text)
+
+    if not plausible_text(text):
+        return
+
+    records.append({
+        "dataset": dataset,
+        "split": str(split),
+        "doc_id": clean_text(doc_id),
+        "sentence_id": clean_text(sid),
+        "text": text,
+        "label": clean_text(label),
+    })
+
+
+# ------------------------------------------------------------
+# LegalEval / InRhetoricalRoles
+# Nested annotation structure:
+# annotations[].result[].value{text, labels, ...}
+# ------------------------------------------------------------
+
+if legaleval is not None:
+    print("\nSTANDARDIZE LegalEval")
+
+    for split, ds in legaleval.items():
+        for ridx, row in enumerate(tqdm(ds, desc=f"LegalEval/{split}")):
+            doc_id = (
+                ci_get(row, ["id", "doc_id", "document_id"])
+                or f"{split}_{ridx}"
+            )
+
+            annotations = row.get("annotations") or []
+
+            found = 0
+
+            for ann in annotations:
+                if not isinstance(ann, dict):
+                    continue
+
+                for result in ann.get("result", []) or []:
+                    if not isinstance(result, dict):
+                        continue
+
+                    value = result.get("value") or {}
+                    if not isinstance(value, dict):
+                        continue
+
+                    text = value.get("text", "")
+                    labels = value.get("labels", [])
+
+                    if isinstance(labels, list):
+                        label = "|".join(map(str, labels))
+                    else:
+                        label = labels
+
+                    if plausible_text(text):
+                        add(
+                            "legaleval",
+                            split,
+                            doc_id,
+                            found,
+                            text,
+                            label,
+                        )
+                        found += 1
+
+
+# ------------------------------------------------------------
+# IL-TUR rhetorical roles
+# each document: text=[sentences], labels=[labels]
+# ------------------------------------------------------------
+
+if iltur_rr is not None:
+    print("\nSTANDARDIZE IL-TUR RR")
+
+    for split, ds in iltur_rr.items():
+        for ridx, row in enumerate(tqdm(ds, desc=f"IL-TUR/{split}")):
+            doc_id = (
+                ci_get(row, ["id", "doc_id", "document_id", "name"])
+                or f"{split}_{ridx}"
+            )
+
+            texts = ci_get(row, ["text", "sentences", "sentence"])
+            labels = ci_get(row, ["labels", "label"])
+
+            if isinstance(texts, list):
+                if not isinstance(labels, list):
+                    labels = [""] * len(texts)
+
+                for sid, text in enumerate(texts):
+                    label = labels[sid] if sid < len(labels) else ""
+                    add(
+                        "iltur_rr",
+                        split,
+                        doc_id,
+                        sid,
+                        text,
+                        label,
+                    )
+
+            elif isinstance(texts, str):
+                add(
+                    "iltur_rr",
+                    split,
+                    doc_id,
+                    0,
+                    texts,
+                    labels,
+                )
+
+
+# ------------------------------------------------------------
+# LegalSeg
+# We inspect columns dynamically because HF representations have
+# changed. Works for ordinary Text/Label-style rows.
+# ------------------------------------------------------------
+
+if legalseg is not None:
+    print("\nSTANDARDIZE LegalSeg")
+
+    for split, ds in legalseg.items():
+
+        print(f"LegalSeg/{split} columns:", ds.column_names)
+
+        text_col = find_simple_col(
+            ds.column_names,
+            ["text", "sentence", "sentences", "content"]
+        )
+        label_col = find_simple_col(
+            ds.column_names,
+            ["label", "labels", "role", "rhetorical_role", "category"]
+        )
+        doc_col = find_simple_col(
+            ds.column_names,
+            ["doc_id", "document_id", "document", "file_name",
+             "filename", "file", "case_id", "name", "index"]
+        )
+
+        print(
+            "  inferred:",
+            f"text={text_col}, label={label_col}, doc={doc_col}"
+        )
+
+        if text_col is None:
+            print("  WARNING: no text column inferred; skipped.")
+            continue
+
+        for ridx, row in enumerate(tqdm(ds, desc=f"LegalSeg/{split}")):
+            text = row.get(text_col)
+
+            label = row.get(label_col, "") if label_col else ""
+            doc_id = row.get(doc_col, "") if doc_col else ""
+
+            if isinstance(text, list):
+                labels = label if isinstance(label, list) else [""] * len(text)
+
+                for sid, sent in enumerate(text):
+                    lab = labels[sid] if sid < len(labels) else ""
+                    add(
+                        "legalseg",
+                        split,
+                        doc_id or f"{split}_{ridx}",
+                        sid,
+                        sent,
+                        lab,
+                    )
+            else:
+                add(
+                    "legalseg",
+                    split,
+                    doc_id,
+                    ridx,
+                    text,
+                    label,
+                )
+
+
+# ------------------------------------------------------------
+# MARRO
+# HF representation consists of sentence lines with a role token
+# appended. Strip known role from the end.
+# ------------------------------------------------------------
+
+MARRO_LABELS = {
+    "FAC", "ARG", "RATIO", "Ratio",
+    "STA", "PRE", "RPC", "RLC"
+}
+
+if marro is not None:
+    print("\nSTANDARDIZE MARRO")
+
+    for split, ds in marro.items():
+
+        text_col = find_simple_col(
+            ds.column_names,
+            ["text", "sentence", "content"]
+        )
+
+        label_col = find_simple_col(
+            ds.column_names,
+            ["label", "role", "category"]
+        )
+
+        doc_col = find_simple_col(
+            ds.column_names,
+            ["doc_id", "document_id", "file", "filename", "name", "id"]
+        )
+
+        print(
+            f"MARRO/{split}: "
+            f"text={text_col}, label={label_col}, doc={doc_col}"
+        )
+
+        for ridx, row in enumerate(tqdm(ds, desc=f"MARRO/{split}")):
+
+            if text_col is None:
+                continue
+
+            text = clean_text(row.get(text_col))
+            label = row.get(label_col, "") if label_col else ""
+
+            # Public HF version often has role appended to text.
+            if not label:
+                m = re.search(
+                    r"\s+(FAC|ARG|RATIO|Ratio|STA|PRE|RPC|RLC)\s*$",
+                    text
+                )
+                if m:
+                    label = m.group(1).upper()
+                    text = text[:m.start()].strip()
+
+            doc_id = row.get(doc_col, "") if doc_col else ""
+
+            add(
+                "marro",
+                split,
+                doc_id,
+                ridx,
+                text,
+                label,
+            )
+
+
+# ------------------------------------------------------------
+# DeepRhole / JURIX 2019
+# Official format: sentence<TAB>label, one document per file.
+# ------------------------------------------------------------
+
+print("\nSTANDARDIZE DeepRhole / JURIX")
+
+deep_root = RAW / "deeprhole_jurix2019" / "data" / "text"
+
+if not deep_root.exists():
+    # fallback if sparse checkout layout differs
+    candidates = [
+        p for p in (RAW / "deeprhole_jurix2019").rglob("*")
+        if p.is_dir() and p.name == "text"
+    ]
+    deep_root = candidates[0] if candidates else deep_root
+
+if deep_root.exists():
+    files = sorted([p for p in deep_root.rglob("*") if p.is_file()])
+
+    print("DeepRhole files:", len(files))
+
+    for fn in tqdm(files, desc="DeepRhole"):
+        try:
+            lines = fn.read_text(
+                encoding="utf-8",
+                errors="replace"
+            ).splitlines()
+        except Exception:
+            continue
+
+        for sid, line in enumerate(lines):
+            if "\t" not in line:
+                continue
+
+            text, label = line.rsplit("\t", 1)
+
+            add(
+                "deeprhole",
+                "all",
+                fn.stem,
+                sid,
+                text,
+                label,
+            )
+else:
+    print("WARNING: DeepRhole data/text not found.")
+
+
+# ============================================================
+# 3. Save unified RR corpus
+# ============================================================
+
+print("\n" + "=" * 78)
+print("BUILD UNIFIED RHETORICAL-ROLE TABLE")
+print("=" * 78)
+
+df = pd.DataFrame(records)
+
+if len(df) == 0:
+    raise RuntimeError("No rhetorical-role records could be extracted.")
+
+df["norm"] = df["text"].map(norm_text)
+df["norm_aggressive"] = df["text"].map(aggressive_norm)
+
+df.to_parquet(
+    STD / "rhetorical_roles_all.parquet",
+    index=False,
+)
+
+# Human-inspectable sample only, to avoid gigantic CSV.
+(
+    df.groupby("dataset", group_keys=False)
+      .head(100)
+      .to_csv(
+          STD / "rhetorical_roles_sample.csv",
+          index=False
+      )
+)
+
+print("Unified rows:", f"{len(df):,}")
+
+
+# ============================================================
+# 4. Dataset stats
+# ============================================================
+
+stats = []
+
+for dataset, g in df.groupby("dataset"):
+
+    docvals = g["doc_id"].astype(str)
+    real_docs = docvals[docvals.str.len() > 0]
+
+    stats.append({
+        "dataset": dataset,
+        "rows": len(g),
+        "unique_text_exact": g["text"].nunique(),
+        "unique_text_normalized": g["norm"].nunique(),
+        "unique_docs_nonempty": real_docs.nunique(),
+        "labels": g["label"].nunique(),
+        "mean_chars": g["text"].str.len().mean(),
+        "median_chars": g["text"].str.len().median(),
+    })
+
+stats_df = pd.DataFrame(stats).sort_values("rows", ascending=False)
+stats_df.to_csv(OUT / "rr_corpus_stats.csv", index=False)
+
+print("\nRR CORPUS STATS")
+print(stats_df.to_string(index=False))
+
+
+# ============================================================
+# 5. Labels
+# ============================================================
+
+label_counts = (
+    df.groupby(["dataset", "label"])
+      .size()
+      .reset_index(name="count")
+      .sort_values(["dataset", "count"], ascending=[True, False])
+)
+
+label_counts.to_csv(
+    OUT / "rr_label_counts.csv",
+    index=False,
+)
+
+
+# ============================================================
+# 6. Exact + normalized overlap
+# ============================================================
+
+datasets = sorted(df["dataset"].unique())
+
+exact_sets = {}
+norm_sets = {}
+
+for name in datasets:
+    part = df[df["dataset"] == name]
+
+    exact_sets[name] = {
+        h64(x)
+        for x in part["norm"].unique()
+        if plausible_text(x)
+    }
+
+    norm_sets[name] = {
+        h64(x)
+        for x in part["norm_aggressive"].unique()
+        if plausible_text(x)
+    }
+
+
+def overlap_table(sets):
+    rows = []
+
+    for i, a in enumerate(datasets):
+        for b in datasets[i + 1:]:
+
+            A = sets[a]
+            B = sets[b]
+            n = len(A & B)
+
+            rows.append({
+                "dataset_a": a,
+                "dataset_b": b,
+                "unique_a": len(A),
+                "unique_b": len(B),
+                "intersection": n,
+                "pct_of_a": 100 * n / max(1, len(A)),
+                "pct_of_b": 100 * n / max(1, len(B)),
+                "pct_of_smaller": 100 * n / max(1, min(len(A), len(B))),
+            })
+
+    columns = [
+        "dataset_a",
+        "dataset_b",
+        "unique_a",
+        "unique_b",
+        "intersection",
+        "pct_of_a",
+        "pct_of_b",
+        "pct_of_smaller",
+    ]
+
+    if not rows:
+        return pd.DataFrame(columns=columns)
+
+    return pd.DataFrame(rows, columns=columns).sort_values(
+        ["intersection", "pct_of_smaller"],
+        ascending=False,
+    )
+
+
+exact = overlap_table(exact_sets)
+normal = overlap_table(norm_sets)
+
+exact.to_csv(
+    OUT / "rr_overlap_exact.csv",
+    index=False,
+)
+
+normal.to_csv(
+    OUT / "rr_overlap_normalized.csv",
+    index=False,
+)
+
+
+print("\nEXACT/NORMALIZED-WHITESPACE OVERLAP")
+print(exact.to_string(index=False))
+
+print("\nAGGRESSIVELY NORMALIZED OVERLAP")
+print(normal.to_string(index=False))
+
+
+# ============================================================
+# 7. Save examples for every overlapping pair
+# ============================================================
+
+examples = []
+
+for i, a in enumerate(datasets):
+    A = df[df["dataset"] == a]
+
+    amap = (
+        A.drop_duplicates("norm_aggressive")
+         .set_index("norm_aggressive")["text"]
+         .to_dict()
+    )
+
+    for b in datasets[i + 1:]:
+        B = df[df["dataset"] == b]
+
+        common = (
+            set(A["norm_aggressive"])
+            & set(B["norm_aggressive"])
+        )
+
+        common = [
+            x for x in common
+            if plausible_text(x)
+        ]
+
+        for text_norm in common[:20]:
+            btext = B.loc[
+                B["norm_aggressive"] == text_norm,
+                "text"
+            ].iloc[0]
+
+            examples.append({
+                "dataset_a": a,
+                "dataset_b": b,
+                "text_a": amap.get(text_norm, ""),
+                "text_b": btext,
+            })
+
+
+pd.DataFrame(examples).to_csv(
+    OUT / "rr_overlap_examples.csv",
+    index=False,
+)
+
+
+# ============================================================
+# 8. Raw filesystem audit
+# ============================================================
+
+inventory = []
+
+for p in sorted(RAW.rglob("*")):
+    if not p.is_file():
+        continue
+
+    try:
+        size = p.stat().st_size
+    except OSError:
+        continue
+
+    pointer = False
+
+    if size < 4096:
+        try:
+            head = p.read_bytes()[:1000]
+            pointer = (
+                b"git-lfs.github.com/spec/v1" in head
+                or b"oid sha256:" in head
+            )
+        except Exception:
+            pass
+
+    inventory.append({
+        "path": str(p.relative_to(ROOT)),
+        "bytes": size,
+        "possible_lfs_pointer": pointer,
+    })
+
+
+pd.DataFrame(inventory).to_csv(
+    OUT / "raw_file_inventory.csv",
+    index=False,
+)
+
+
+print("\n" + "=" * 78)
+print("DONE")
+print("=" * 78)
+
+print("\nOutputs:")
+for fn in sorted(OUT.glob("*")):
+    print(" ", fn)
+
+print("\nStandardized:")
+for fn in sorted(STD.glob("*")):
+    print(" ", fn)
+

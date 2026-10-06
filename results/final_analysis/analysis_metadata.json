@@ -1,0 +1,12 @@
+{
+  "total_runs": 335,
+  "main_runs": 270,
+  "rank_runs": 60,
+  "mechanistic_runs": 5,
+  "main_cells": 90,
+  "main_seeds_per_cell": 3,
+  "friedman_stat": 59.076190476190504,
+  "friedman_p": 1.88611314802821e-11,
+  "total_train_seconds": 65294.72396636009,
+  "total_train_hours": 18.137423323988916
+}

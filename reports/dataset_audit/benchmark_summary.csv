@@ -1,0 +1,6 @@
+dataset,raw_rows,dedup_rows,cross_clean_rows,documents,labels
+deeprhole,9380,9217,0,50,7
+legaleval,36034,33758,32481,325,13
+legalseg,1565606,1330341,1325588,7120,7
+marro_india,33331,32978,21111,170,7
+marro_uk,20335,19897,19769,59,7

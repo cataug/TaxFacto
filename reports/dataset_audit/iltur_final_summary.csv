@@ -1,0 +1,13 @@
+dataset,task,split_canonical,rows,documents,labels
+iltur_cl,native,dev,1326,5,10
+iltur_cl,native,test,1319,5,12
+iltur_cl,native,train,10113,40,12
+iltur_it,native,dev,742,5,11
+iltur_it,native,test,791,5,11
+iltur_it,native,train,6091,40,12
+iltur_cl,common7,dev,1321,5,7
+iltur_cl,common7,test,1245,5,7
+iltur_cl,common7,train,9761,40,7
+iltur_it,common7,dev,699,5,7
+iltur_it,common7,test,762,5,7
+iltur_it,common7,train,5786,40,7

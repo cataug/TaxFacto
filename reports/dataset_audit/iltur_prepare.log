@@ -1,0 +1,103 @@
+==========================================================================================
+IL-TUR RR FLATTEN
+==========================================================================================
+
+CL train documents: 40
+
+CL dev documents: 5
+
+CL test documents: 5
+
+IT train documents: 40
+
+IT dev documents: 5
+
+IT test documents: 5
+
+TOTAL SENTENCES: 21184
+TOTAL DOCUMENTS: 100
+
+==========================================================================================
+SUMMARY
+==========================================================================================
+ dataset split_canonical  rows  documents  labels
+iltur_cl             dev  1396          5      10
+iltur_cl            test  1339          5      12
+iltur_cl           train 10593         40      12
+iltur_it             dev   746          5      11
+iltur_it            test   858          5      11
+iltur_it           train  6252         40      12
+
+==========================================================================================
+LABEL COUNTS
+==========================================================================================
+
+iltur_cl
+split_canonical         dev  test  train
+label                                   
+ArgumentPetitioner      344   130    976
+ArgumentRespondent      236    71    996
+Dissent                   0    79    284
+Fact                    249   245   2979
+Issue                     3     2     17
+None                      2     1     53
+PrecedentNotReliedUpon    0    19    209
+PrecedentReliedUpon     142   237   1305
+RatioOfTheDecision      288   434   2856
+RulingByLowerCourt       56    23    438
+RulingByPresentCourt     18    12    113
+Statute                  58    86    367
+
+iltur_it
+split_canonical         dev  test  train
+label                                   
+ArgumentPetitioner       56    59    637
+ArgumentRespondent       36    56    352
+Fact                    195   134   1119
+Issue                    12    11     90
+None                     31    23    244
+PrecedentNotReliedUpon   50     8    360
+PrecedentOverruled        0     0      3
+PrecedentReliedUpon     112   137    640
+RatioOfTheDecision      115   191   1445
+RulingByLowerCourt       46    99    436
+RulingByPresentCourt     31    25    194
+Statute                  62   115    732
+
+==========================================================================================
+WITHIN-DOMAIN SPLIT OVERLAP
+==========================================================================================
+iltur_cl     train-dev  :     92
+iltur_cl     train-test :     42
+iltur_cl     dev  -test :     52
+iltur_it     train-dev  :      3
+iltur_it     train-test :      1
+iltur_it     dev  -test :      2
+
+==========================================================================================
+CL <-> IT
+==========================================================================================
+CL unique: 12758
+IT unique: 7624
+overlap  : 23
+
+==========================================================================================
+CROSS-DATASET OVERLAP
+==========================================================================================
+iltur_cl     <-> legaleval     :     18 | IL-TUR    0.14% | other    0.05%
+iltur_cl     <-> legalseg      :   2172 | IL-TUR   17.02% | other    0.16%
+iltur_cl     <-> marro_india   :     11 | IL-TUR    0.09% | other    0.03%
+iltur_cl     <-> marro_uk      :      2 | IL-TUR    0.02% | other    0.01%
+iltur_it     <-> legaleval     :     35 | IL-TUR    0.46% | other    0.10%
+iltur_it     <-> legalseg      :   1319 | IL-TUR   17.30% | other    0.10%
+iltur_it     <-> marro_india   :     18 | IL-TUR    0.24% | other    0.05%
+iltur_it     <-> marro_uk      :      1 | IL-TUR    0.01% | other    0.01%
+
+==========================================================================================
+FILES / SHA256
+==========================================================================================
+iltur_rr.parquet              2100196 abed510cf0966e1207ccfe34119c4b8fe2c6f85b84dc8a330ecdb279b04058e3
+iltur_cl.parquet              1355306 86dedf5b542e57302cd364d64e0b73c90ccb7a98c5e8478ea5634ca695f168b0
+iltur_it.parquet               763296 98e3387de6b0036929710af1af6d7236c7ade676f1ec312610e4b358b49a740f
+
+DONE

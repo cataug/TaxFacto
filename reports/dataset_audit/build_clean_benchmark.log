@@ -1,0 +1,38 @@
+Loaded: 1611020
+dataset
+deeprhole       9380
+legaleval      36034
+legalseg     1565606
+dtype: int64
+
+After within-dataset dedup:
+before: 1611020
+after:  1373316
+
+dataset
+deeprhole       9217
+legaleval      33758
+legalseg     1330341
+dtype: int64
+
+Cross-dataset overlap:
+dataset_a dataset_b   n_a     n_b  overlap    pct_a    pct_b
+deeprhole legaleval  9217   33758       51 0.553325 0.151075
+deeprhole  legalseg  9217 1330341      878 9.525876 0.065998
+legaleval  legalseg 33758 1330341     1231 3.646543 0.092533
+
+deeprhole      : dedup=9,217 clean=8,330 removed=887
+
+legaleval      : dedup=33,758 clean=32,518 removed=1,240
+
+legalseg       : dedup=1,330,341 clean=1,328,274 removed=2,067
+
+========================================================================
+FINAL CLEAN BENCHMARK
+========================================================================
+  dataset  raw_rows  dedup_rows  cross_clean_rows  documents  labels
+deeprhole      9380        9217              8330         50       7
+legaleval     36034       33758             32518        325      13
+ legalseg   1565606     1330341           1328274       7120       7
+
+Saved to: /home/tahiti/TaxFacto/data/benchmark

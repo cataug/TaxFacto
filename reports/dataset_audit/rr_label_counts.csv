@@ -1,0 +1,28 @@
+dataset,label,count
+deeprhole,Ratio of the decision,3624
+deeprhole,Facts,2219
+deeprhole,Precedent,1468
+deeprhole,Argument,845
+deeprhole,Statute,646
+deeprhole,Ruling by Lower Court,316
+deeprhole,Ruling by Present Court,262
+legaleval,ANALYSIS,12937
+legaleval,FAC,7258
+legaleval,PREAMBLE,5399
+legaleval,NONE,1865
+legaleval,PRE_RELIED,1714
+legaleval,ARG_PETITIONER,1638
+legaleval,RPC,1370
+legaleval,RLC,955
+legaleval,RATIO,877
+legaleval,ARG_RESPONDENT,818
+legaleval,STA,571
+legaleval,ISSUE,461
+legaleval,PRE_NOT_RELIED,171
+legalseg,,783194
+legalseg,Reasoning,306128
+legalseg,Facts,246477
+legalseg,Arguments of Petitioner,104212
+legalseg,Arguments of Respondent,75687
+legalseg,Decision,31046
+legalseg,Issue,18862

@@ -1,0 +1,5 @@
+dataset,split,documents,rows
+marro_india,train,150,30729
+marro_india,test,20,2602
+marro_uk,train,50,18155
+marro_uk,test,9,2180

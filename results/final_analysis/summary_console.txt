@@ -1,0 +1,196 @@
+========================================================================================================================
+TAXFACTO — MASSIVE COMMON-7 FINAL ANALYSIS
+========================================================================================================================
+summary files found : 335
+successfully parsed : 335
+parse failures       : 0
+
+PHASE COUNTS
+phase
+main           270
+mechanistic      5
+rank            60
+
+INVENTORY CHECK: 335/335 OK
+
+========================================================================================================================
+MAIN GRID — OVERALL METHOD RANKING
+equal weight for each of 15 dataset × backbone cells
+========================================================================================================================
+          method_key  cells macro_f1_mean macro_f1_std_across_cells min_cell_f1 max_cell_f1 weighted_f1_mean accuracy_mean train_seconds_mean peak_vram_gb_mean
+             full_ft     15        0.5856                    0.1068      0.4429      0.7613           0.6630        0.6673              272.8              6.54
+        role_adapter     15        0.5583                    0.1099      0.3639      0.7644           0.6513        0.6648              198.9              4.79
+       category_lora     15        0.5562                    0.1079      0.3674      0.7625           0.6506        0.6642              203.3              4.79
+shared_lora_widehead     15        0.5439                    0.1074      0.3831      0.7507           0.6458        0.6614              204.3              4.79
+         shared_lora     15        0.4960                    0.1219      0.2794      0.7410           0.6233        0.6468              200.8              4.79
+              frozen     15        0.1867                    0.0713      0.1155      0.3366           0.3766        0.4748               98.0              1.21
+
+========================================================================================================================
+MAIN GRID — MACRO-F1 BY BACKBONE
+========================================================================================================================
+model_key             deberta  inlegalbert  legalbert
+method_key                                           
+frozen                 0.1573       0.2588     0.1440
+full_ft                0.5762       0.6016     0.5788
+shared_lora            0.4136       0.5774     0.4971
+shared_lora_widehead   0.4734       0.5987     0.5597
+category_lora          0.5051       0.6004     0.5632
+role_adapter           0.5049       0.6038     0.5661
+
+========================================================================================================================
+MAIN GRID — MACRO-F1 BY DATASET
+averaged over 3 backbones after seed averaging
+========================================================================================================================
+dataset_key           iltur_cl  iltur_it  legaleval  marro_india  marro_uk
+method_key                                                                
+frozen                  0.1903    0.2073     0.2409       0.1547    0.1402
+full_ft                 0.5172    0.6379     0.7509       0.5679    0.4538
+shared_lora             0.4555    0.4747     0.6559       0.5156    0.3784
+shared_lora_widehead    0.4834    0.5656     0.6904       0.5364    0.4439
+category_lora           0.5098    0.5732     0.7223       0.5368    0.4390
+role_adapter            0.5093    0.5693     0.7284       0.5426    0.4417
+
+========================================================================================================================
+BEST METHOD PER DATASET × BACKBONE
+========================================================================================================================
+deberta        iltur_cl       full_ft                  0.4971 ± 0.0232
+deberta        iltur_it       full_ft                  0.6279 ± 0.0189
+deberta        legaleval      full_ft                  0.7460 ± 0.0069
+deberta        marro_india    full_ft                  0.5673 ± 0.0124
+deberta        marro_uk       full_ft                  0.4429 ± 0.0164
+inlegalbert    iltur_cl       category_lora            0.5526 ± 0.0139
+inlegalbert    iltur_it       shared_lora_widehead     0.6517 ± 0.0062
+inlegalbert    legaleval      role_adapter             0.7644 ± 0.0068
+inlegalbert    marro_india    full_ft                  0.5893 ± 0.0095
+inlegalbert    marro_uk       role_adapter             0.4894 ± 0.0083
+legalbert      iltur_cl       full_ft                  0.5142 ± 0.0190
+legalbert      iltur_it       full_ft                  0.6360 ± 0.0195
+legalbert      legaleval      full_ft                  0.7454 ± 0.0086
+legalbert      marro_india    full_ft                  0.5472 ± 0.0134
+legalbert      marro_uk       role_adapter             0.4718 ± 0.0057
+
+========================================================================================================================
+BLOCKED STATISTICAL COMPARISON
+15 blocks = 5 datasets × 3 backbones; value = mean over 3 seeds
+========================================================================================================================
+Friedman chi-square = 59.0762, p = 1.88611e-11
+
+PAIRWISE WILCOXON + HOLM
+            method_a             method_b mean_delta_a_minus_b median_delta_a_minus_b  wins_a  ties  losses_a wilcoxon_stat       p_raw      p_holm
+              frozen              full_ft              -0.3988                -0.3944       0     0        15         0.000 6.10352e-05 0.000915527
+              frozen          shared_lora              -0.3093                -0.2870       0     0        15         0.000 6.10352e-05 0.000915527
+              frozen shared_lora_widehead              -0.3572                -0.3513       0     0        15         0.000 6.10352e-05 0.000915527
+              frozen        category_lora              -0.3695                -0.3650       0     0        15         0.000 6.10352e-05 0.000915527
+              frozen         role_adapter              -0.3716                -0.3698       0     0        15         0.000 6.10352e-05 0.000915527
+             full_ft          shared_lora               0.0895                 0.0480      15     0         0         0.000 6.10352e-05 0.000915527
+         shared_lora shared_lora_widehead              -0.0479                -0.0338       0     0        15         0.000 6.10352e-05 0.000915527
+         shared_lora        category_lora              -0.0602                -0.0422       0     0        15         0.000 6.10352e-05 0.000915527
+         shared_lora         role_adapter              -0.0622                -0.0461       0     0        15         0.000 6.10352e-05 0.000915527
+             full_ft shared_lora_widehead               0.0416                 0.0240      12     0         3        11.000  0.00335693   0.0201416
+             full_ft        category_lora               0.0293                 0.0294      11     0         4        16.000   0.0102539   0.0512695
+             full_ft         role_adapter               0.0273                 0.0201      11     0         4        22.000   0.0301514    0.120605
+shared_lora_widehead         role_adapter              -0.0143                -0.0094       3     0        12        26.000   0.0553589    0.166077
+shared_lora_widehead        category_lora              -0.0123                -0.0065       5     0        10        35.000    0.168823    0.337646
+       category_lora         role_adapter              -0.0020                -0.0029       5     0        10        38.000    0.229309    0.337646
+
+========================================================================================================================
+ROLE ADAPTER — 15-CELL COMPARISON
+========================================================================================================================
+                         comparison mean_delta median_delta  wins  ties  losses
+              role_adapter - frozen     0.3716       0.3698    15     0       0
+             role_adapter - full_ft    -0.0273      -0.0201     4     0      11
+         role_adapter - shared_lora     0.0622       0.0461    15     0       0
+role_adapter - shared_lora_widehead     0.0143       0.0094    12     0       3
+       role_adapter - category_lora     0.0020       0.0029    10     0       5
+
+========================================================================================================================
+COMPUTATIONAL EFFICIENCY
+========================================================================================================================
+  model_key           method_key  runs  parameters_total  parameters_trainable trainable_pct train_seconds_mean train_seconds_std peak_vram_gb_mean peak_vram_gb_max
+    deberta        category_lora    15       184217863.0              386311.0         0.210              273.1             140.0              8.29             8.29
+    deberta               frozen    15       184427527.0              595975.0         0.323              138.0              63.2              2.03             2.03
+    deberta              full_ft    15       184427527.0           184427527.0       100.000              352.4             179.9             10.53            10.53
+    deberta         role_adapter    15       184217863.0              386311.0         0.210              265.0             138.6              8.29             8.29
+    deberta          shared_lora    15       184727822.0              300295.0         0.163              270.2             143.9              8.29             8.29
+    deberta shared_lora_widehead    15       184218039.0              386487.0         0.210              274.3             139.7              8.29             8.29
+inlegalbert        category_lora    15       109868551.0              386311.0         0.352              170.3              91.3              3.04             3.04
+inlegalbert               frozen    15       109487623.0                5383.0         0.005               80.5              39.7              0.79             0.79
+inlegalbert              full_ft    15       109487623.0           109487623.0       100.000              237.5             130.6              4.55             4.55
+inlegalbert         role_adapter    15       109868551.0              386311.0         0.352              168.0              91.2              3.04             3.04
+inlegalbert          shared_lora    15       109787918.0              300295.0         0.274              168.2              91.4              3.04             3.04
+inlegalbert shared_lora_widehead    15       109868727.0              386487.0         0.352              171.4              91.2              3.04             3.04
+  legalbert        category_lora    15       109868551.0              386311.0         0.352              166.6              89.9              3.04             3.04
+  legalbert               frozen    15       109487623.0                5383.0         0.005               75.5              36.1              0.79             0.79
+  legalbert              full_ft    15       109487623.0           109487623.0       100.000              228.6             125.5              4.55             4.55
+  legalbert         role_adapter    15       109868551.0              386311.0         0.352              163.7              90.9              3.04             3.04
+  legalbert          shared_lora    15       109787918.0              300295.0         0.274              164.0              89.6              3.04             3.04
+  legalbert shared_lora_widehead    15       109868727.0              386487.0         0.352              167.2              89.5              3.04             3.04
+
+========================================================================================================================
+RANK ABLATION — MEAN TEST MACRO-F1 ACROSS 5 DATASETS
+InLegalBERT, seed 42
+========================================================================================================================
+method_key  category_lora  role_adapter  shared_lora
+rank                                                
+2                  0.5966        0.5860       0.5025
+4                  0.5863        0.5958       0.5411
+8                  0.6007        0.6047       0.5748
+16                 0.6019        0.6007       0.5884
+32                 0.5938        0.5954       0.5916
+
+========================================================================================================================
+TRUE CATEGORY LORA — MECHANISTIC COMPARISON
+========================================================================================================================
+    dataset true_category_f1 role_adapter_f1 delta_true_minus_role_adapter category_lora_f1 delta_true_minus_category_lora shared_lora_f1 delta_true_minus_shared_lora
+   iltur_cl           0.5024          0.5495                       -0.0471           0.5448                        -0.0424         0.5104                      -0.0080
+   iltur_it           0.6291          0.6421                       -0.0129           0.6407                        -0.0116         0.6125                       0.0166
+  legaleval           0.7690          0.7655                        0.0035           0.7684                         0.0006         0.7433                       0.0257
+marro_india           0.5579          0.5750                       -0.0171           0.5676                        -0.0097         0.5555                       0.0024
+   marro_uk           0.4668          0.4913                       -0.0245           0.4820                        -0.0152         0.4525                       0.0143
+
+========================================================================================================================
+ROLE ADAPTER — PER-CLASS F1
+averaged over all main runs
+========================================================================================================================
+label f1_mean f1_std
+  FAC  0.6987 0.1078
+  STA  0.6889 0.1183
+RATIO  0.6406 0.0937
+  ARG  0.6014 0.1940
+  RPC  0.5518 0.1888
+  PRE  0.4899 0.1559
+  RLC  0.2367 0.2271
+
+========================================================================================================================
+RECORDED COMPUTE
+========================================================================================================================
+      phase  runs train_seconds mean_peak_vram_gb max_peak_vram_gb train_hours
+       main   270       53016.2              4.48            10.53       14.73
+mechanistic     5        2168.6             16.88            16.88        0.60
+       rank    60       10109.9              3.04             3.06        2.81
+
+Total summed training time: 18.14 GPU-process hours
+
+========================================================================================================================
+SAVED
+========================================================================================================================
+results/final_analysis/all_335_runs.csv
+results/final_analysis/analysis_metadata.json
+results/final_analysis/compute_by_phase.csv
+results/final_analysis/main_best_method_per_cell.csv
+results/final_analysis/main_by_backbone_method.csv
+results/final_analysis/main_by_dataset_method.csv
+results/final_analysis/main_cell_mean_std.csv
+results/final_analysis/main_efficiency.csv
+results/final_analysis/main_method_overall.csv
+results/final_analysis/main_pairwise_wilcoxon.csv
+results/final_analysis/mechanistic_comparison.csv
+results/final_analysis/per_class_all_runs.csv
+results/final_analysis/per_class_main_mean_std.csv
+results/final_analysis/rank_ablation_all_points.csv
+results/final_analysis/rank_ablation_best_per_dataset.csv
+results/final_analysis/rank_ablation_summary.csv
+results/final_analysis/role_adapter_comparisons.csv
+results/final_analysis/summary_console.txt
+
+FINAL ANALYSIS COMPLETE.

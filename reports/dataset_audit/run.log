@@ -1,0 +1,82 @@
+
+==============================================================================
+LOAD legalseg: L-NLProc/LegalSeg_CSV
+==============================================================================
+Downloading readme:   0%|          | 0.00/31.0 [00:00<?, ?B/s]Downloading readme: 100%|██████████| 31.0/31.0 [00:00<00:00, 206B/s]Downloading readme: 100%|██████████| 31.0/31.0 [00:00<00:00, 205B/s]
+Downloading data:   0%|          | 0.00/217M [00:00<?, ?B/s]FAILED: legalseg
+GatedRepoError 403 Client Error. (Request ID: Root=1-6ab5500d-6f2d085d3237f3612a5455ca;03788f9a-b4a8-4929-aaee-1e6a76eeae3c)
+
+Cannot access gated repo for url https://huggingface.co/datasets/L-NLProc/LegalSeg_CSV/resolve/31217aa845866bbd18a8ad567a785e6f5485435a/train.csv.
+Access to dataset L-NLProc/LegalSeg_CSV is restricted and you are not in the authorized list. Visit https://huggingface.co/datasets/L-NLProc/LegalSeg_CSV to ask for access.
+Downloading data:   0%|          | 0.00/217M [00:00<?, ?B/s]
+
+==============================================================================
+LOAD legaleval: opennyaiorg/InRhetoricalRoles
+==============================================================================
+Downloading readme:   0%|          | 0.00/2.56k [00:00<?, ?B/s]Downloading readme: 100%|██████████| 2.56k/2.56k [00:00<00:00, 16.4kB/s]Downloading readme: 100%|██████████| 2.56k/2.56k [00:00<00:00, 16.3kB/s]
+Downloading data:   0%|          | 0.00/4.87M [00:00<?, ?B/s]FAILED: legaleval
+GatedRepoError 403 Client Error. (Request ID: Root=1-6ab5500f-051050d76fed73b43f453649;105613f9-ae9b-4449-9ab7-5adfc73746fa)
+
+Cannot access gated repo for url https://huggingface.co/datasets/opennyaiorg/InRhetoricalRoles/resolve/fc6664bae469e6c47acf253704622d593dc7465e/data/train-00000-of-00001-bb0092e0d8549337.parquet.
+Access to dataset opennyaiorg/InRhetoricalRoles is restricted and you are not in the authorized list. Visit https://huggingface.co/datasets/opennyaiorg/InRhetoricalRoles to ask for access.
+Downloading data:   0%|          | 0.00/4.87M [00:00<?, ?B/s]
+
+==============================================================================
+LOAD iltur_rr: Exploration-Lab/IL-TUR / rr
+==============================================================================
+Downloading readme:   0%|          | 0.00/37.9k [00:00<?, ?B/s]Downloading readme:  19%|█▉        | 7.20k/37.9k [00:00<00:00, 46.6kB/s]Downloading readme: 100%|██████████| 37.9k/37.9k [00:00<00:00, 239kB/s] 
+Downloading data:   0%|          | 0.00/1.09M [00:00<?, ?B/s]FAILED: iltur_rr
+GatedRepoError 403 Client Error. (Request ID: Root=1-6ab55011-4292475a78e84b926a8adc9a;2a4752d7-f209-4ab2-95a9-4995f81a29ec)
+
+Cannot access gated repo for url https://huggingface.co/datasets/Exploration-Lab/IL-TUR/resolve/d16219ad0423cc181ec8460d930fd10a907664b6/rr/CL_train-00000-of-00001.parquet.
+Access to dataset Exploration-Lab/IL-TUR is restricted and you are not in the authorized list. Visit https://huggingface.co/datasets/Exploration-Lab/IL-TUR to ask for access.
+Downloading data:   0%|          | 0.00/1.09M [00:00<?, ?B/s]
+
+==============================================================================
+LOAD iltur_cjpe: Exploration-Lab/IL-TUR / cjpe
+==============================================================================
+Downloading data:   0%|          | 0.00/1.80M [00:00<?, ?B/s]FAILED: iltur_cjpe
+GatedRepoError 403 Client Error. (Request ID: Root=1-6ab55013-539dd58b564d8a6912ddfaf3;1a33bfbe-dc41-436d-a21c-9e253d170411)
+
+Cannot access gated repo for url https://huggingface.co/datasets/Exploration-Lab/IL-TUR/resolve/d16219ad0423cc181ec8460d930fd10a907664b6/cjpe/expert-00000-of-00001.parquet.
+Access to dataset Exploration-Lab/IL-TUR is restricted and you are not in the authorized list. Visit https://huggingface.co/datasets/Exploration-Lab/IL-TUR to ask for access.
+Downloading data:   0%|          | 0.00/1.80M [00:00<?, ?B/s]
+
+==============================================================================
+LOAD marro: subinay612/MARRO_Rhetorical-Role-Labeling
+==============================================================================
+Downloading readme:   0%|          | 0.00/404 [00:00<?, ?B/s]Downloading readme: 100%|██████████| 404/404 [00:00<00:00, 1.00kB/s]Downloading readme: 100%|██████████| 404/404 [00:00<00:00, 1.00kB/s]
+Repo card metadata block was not found. Setting CardData to empty.
+Downloading data:   0%|          | 0.00/1.86M [00:00<?, ?B/s]Downloading data: 100%|██████████| 1.86M/1.86M [00:01<00:00, 1.52MB/s]Downloading data: 100%|██████████| 1.86M/1.86M [00:01<00:00, 1.52MB/s]
+Downloading data:   0%|          | 0.00/1.07M [00:00<?, ?B/s]Downloading data: 100%|██████████| 1.07M/1.07M [00:00<00:00, 1.30MB/s]Downloading data: 100%|██████████| 1.07M/1.07M [00:00<00:00, 1.29MB/s]
+Downloading data:   0%|          | 0.00/143k [00:00<?, ?B/s]Downloading data: 100%|██████████| 143k/143k [00:00<00:00, 304kB/s]Downloading data: 100%|██████████| 143k/143k [00:00<00:00, 304kB/s]
+Downloading data:   0%|          | 0.00/133k [00:00<?, ?B/s]Downloading data: 100%|██████████| 133k/133k [00:00<00:00, 235kB/s]Downloading data: 100%|██████████| 133k/133k [00:00<00:00, 235kB/s]
+Generating train split:   0%|          | 0/48884 [00:00<?, ? examples/s]Generating train split:   0%|          | 0/48884 [00:00<?, ? examples/s]
+FAILED: marro
+DatasetGenerationError An error occurred while generating the dataset
+
+STANDARDIZE DeepRhole / JURIX
+DeepRhole files: 50
+DeepRhole:   0%|          | 0/50 [00:00<?, ?it/s]DeepRhole:  52%|█████▏    | 26/50 [00:00<00:00, 255.44it/s]DeepRhole: 100%|██████████| 50/50 [00:00<00:00, 265.15it/s]
+
+==============================================================================
+BUILD UNIFIED RHETORICAL-ROLE TABLE
+==============================================================================
+Unified rows: 8,758
+
+RR CORPUS STATS
+  dataset  rows  unique_text_exact  unique_text_normalized  unique_docs_nonempty  labels  mean_chars  median_chars
+deeprhole  8758               8748                    8747                    50       7  173.028203         141.0
+Traceback (most recent call last):
+  File "/home/tahiti/TaxFacto/scripts/materialize_and_audit.py", line 600, in <module>
+    exact = overlap_table(exact_sets)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tahiti/TaxFacto/scripts/materialize_and_audit.py", line 594, in overlap_table
+    return pd.DataFrame(rows).sort_values(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tahiti/Malashin_Projects/.venv_a100/lib/python3.12/site-packages/pandas/core/frame.py", line 7172, in sort_values
+    keys = [self._get_label_or_level_values(x, axis=axis) for x in by]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/tahiti/Malashin_Projects/.venv_a100/lib/python3.12/site-packages/pandas/core/generic.py", line 1911, in _get_label_or_level_values
+    raise KeyError(key)
+KeyError: 'intersection'

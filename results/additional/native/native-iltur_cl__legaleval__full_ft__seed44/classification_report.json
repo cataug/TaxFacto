@@ -1,0 +1,87 @@
+{
+  "ArgumentPetitioner": {
+    "precision": 0.4866666666666667,
+    "recall": 0.5703125,
+    "f1-score": 0.5251798561151079,
+    "support": 128.0
+  },
+  "ArgumentRespondent": {
+    "precision": 0.09333333333333334,
+    "recall": 0.1,
+    "f1-score": 0.09655172413793103,
+    "support": 70.0
+  },
+  "Dissent": {
+    "precision": 1.0,
+    "recall": 0.014084507042253521,
+    "f1-score": 0.027777777777777776,
+    "support": 71.0
+  },
+  "Fact": {
+    "precision": 0.6237623762376238,
+    "recall": 0.7714285714285715,
+    "f1-score": 0.6897810218978102,
+    "support": 245.0
+  },
+  "Issue": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 2.0
+  },
+  "None": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 1.0
+  },
+  "PrecedentNotReliedUpon": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 19.0
+  },
+  "PrecedentReliedUpon": {
+    "precision": 0.5221674876847291,
+    "recall": 0.4608695652173913,
+    "f1-score": 0.4896073903002309,
+    "support": 230.0
+  },
+  "RatioOfTheDecision": {
+    "precision": 0.5995717344753747,
+    "recall": 0.6466512702078522,
+    "f1-score": 0.6222222222222222,
+    "support": 433.0
+  },
+  "RulingByLowerCourt": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1-score": 0.0,
+    "support": 23.0
+  },
+  "RulingByPresentCourt": {
+    "precision": 0.35714285714285715,
+    "recall": 0.8333333333333334,
+    "f1-score": 0.5,
+    "support": 12.0
+  },
+  "Statute": {
+    "precision": 0.8285714285714286,
+    "recall": 0.6823529411764706,
+    "f1-score": 0.7483870967741936,
+    "support": 85.0
+  },
+  "accuracy": 0.5489006823351024,
+  "macro avg": {
+    "precision": 0.3759346570093345,
+    "recall": 0.3399193907004894,
+    "f1-score": 0.3082922574354395,
+    "support": 1319.0
+  },
+  "weighted avg": {
+    "precision": 0.566395616189913,
+    "recall": 0.5489006823351024,
+    "f1-score": 0.5281236088526585,
+    "support": 1319.0
+  }
+}

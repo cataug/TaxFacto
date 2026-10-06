@@ -1,0 +1,40 @@
+Native tasks copied.
+
+LegalEval -> Common7
+before: 33,758
+after : 14,629
+label             ARG   FAC   PRE  RATIO  RLC  RPC  STA
+split_canonical                                        
+dev               100   575   154     68  116   83   28
+test              335   914   142    129   87  193   59
+train            1890  5539  1474    650  717  920  456
+
+marro_india -> Common7
+label             ARG   FAC   PRE  RATIO  RLC  RPC   STA
+split_canonical                                         
+dev               183  1045   199   1932   38   54    95
+test              150   555   388    899  191  103   280
+train            1425  5234  2825  15310  472  400  1200
+
+marro_uk -> Common7
+label            ARG   FAC   PRE  RATIO  RLC  RPC  STA
+split_canonical                                       
+dev              210   500   291   2267   91   23  255
+test              40   303   169   1536   40   11   77
+train            469  2080  1214   8723  441  185  972
+
+==============================================================================
+COMMON-7 READY
+==============================================================================
+    dataset split  rows  documents  labels
+  legaleval   dev  1124         30       7
+  legaleval  test  1859         50       7
+  legaleval train 11646        242       7
+marro_india   dev  3546         18       7
+marro_india  test  2566         20       7
+marro_india train 26866        132       7
+   marro_uk   dev  3637         10       7
+   marro_uk  test  2176          9       7
+   marro_uk train 14084         40       7
+
+Combined rows: 67,504

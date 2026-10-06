@@ -1,0 +1,54 @@
+TaxFacto datasets
+==================
+
+legaleval_inrhetoricalroles
+  HF: opennyaiorg/InRhetoricalRoles
+  Task: rhetorical-role classification
+  Labels: 13
+
+marro
+  HF: subinay612/MARRO_Rhetorical-Role-Labeling
+  Task: rhetorical-role classification
+  Jurisdictions: India + UK
+
+deeprhole_jurix2019
+  GitHub: Law-AI/semantic-segmentation
+  Task: rhetorical-role / semantic segmentation
+  Documents: 50
+
+legalseg
+  HF: L-NLProc/LegalSeg_CSV
+  Task: rhetorical-role classification
+  Documents: 7,120
+  Sentences: 1,487,149
+
+lexglue/scotus
+  HF: coastalcph/lex_glue
+  Task: legal document classification
+
+lexglue/ecthr_a
+  HF: coastalcph/lex_glue
+  Task: multi-label ECHR classification
+
+lexglue/ecthr_b
+  HF: coastalcph/lex_glue
+  Task: multi-label ECHR classification
+
+lexglue/ledgar
+  HF: coastalcph/lex_glue
+  Task: contract provision classification
+
+cuad
+  HF: theatticusproject/cuad
+  Task: contract clause extraction/classification
+
+il_tur/rr
+  HF: Exploration-Lab/IL-TUR
+  Task: rhetorical-role prediction
+  Access: gated
+
+il_tur/cjpe
+  HF: Exploration-Lab/IL-TUR
+  Dataset: ILDC
+  Task: court judgment prediction/explanation
+  Access: gated
